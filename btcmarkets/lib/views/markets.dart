@@ -39,20 +39,15 @@ class _MarketsViewState extends State<MarketsView>
            drawer: _navDrawer,
            appBar:  new AppBar(
              title: Text("Markets"),
-             bottom: TabBar(
-               tabs: [
-                 Tab(text: "Favourites",),
-                 Tab(text: "AUD Markets"),
-                 Tab(text: "BTC Markets"),
-               ],
-             ),
+            //  bottom: TabBar(
+            //    tabs: [
+            //      Tab(text: "Favourites",),
+            //      Tab(text: "AUD Markets"),
+            //      Tab(text: "BTC Markets"),
+            //    ],
+            //  ),
            ),
-           body: new TabBarView(
-               children: [
-                 MarketList(),
-                 new Text("AUD Markets"),
-                 new Text("BTC Markets"),
-               ])
+           body:  MarketList(),
        ),
 
     );
