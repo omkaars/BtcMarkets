@@ -16,6 +16,18 @@ class _NavDrawerState extends State<NavDrawer>
 
   final bool hasValidAccount = false;
 
+  void _onSelectMenu(String name)
+  {
+    switch(name)
+    {
+      case "home":
+
+      break;
+    }
+    
+    Navigator.of(context).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     return new Drawer(
@@ -34,37 +46,40 @@ class _NavDrawerState extends State<NavDrawer>
                   //padding: EdgeInsets.all(0.0),
                 ),
                 ),
-                ListTile(leading: Icon(Icons.home), title: Text('Home'), trailing: Icon(Icons.arrow_forward_ios),),
+                ListTile(leading: Icon(Icons.home), title: Text('Home'), onTap: ()=> _onSelectMenu("home"), ),
                 new Divider(height: 1),
                 ListTile(
-                    leading: Icon(Icons.favorite), title: Text('Favourites'), trailing: Icon(Icons.arrow_forward_ios),),
+                  leading: Icon(Icons.swap_vert), title: Text('Markets')),
+           
+              //   ListTile(
+              //       leading: Icon(Icons.favorite), title: Text('Favourites'), trailing: Icon(Icons.arrow_forward_ios),),
+              //  new Divider(height: 1),
+              //   ListTile(
+              //       leading: Icon(Icons.show_chart), title: Text('BTC Markets'), trailing: Icon(Icons.arrow_forward_ios),),
+              //  new Divider(height: 1),
+              //   ListTile(
+              //     leading: Icon(Icons.show_chart), title: Text('AUD Markets'), trailing: Icon(Icons.arrow_forward_ios),),
+              //  new Divider(height: 1),
+              //   ListTile(
+              //       leading: Icon(Icons.swap_vert), title: Text('Market Trades'), trailing: Icon(Icons.arrow_forward_ios),),
                new Divider(height: 1),
                 ListTile(
-                    leading: Icon(Icons.show_chart), title: Text('BTC Markets'), trailing: Icon(Icons.arrow_forward_ios),),
-               new Divider(height: 1),
-                ListTile(
-                  leading: Icon(Icons.show_chart), title: Text('AUD Markets'), trailing: Icon(Icons.arrow_forward_ios),),
-               new Divider(height: 1),
-                ListTile(
-                    leading: Icon(Icons.swap_vert), title: Text('Market Trades'), trailing: Icon(Icons.arrow_forward_ios),),
-               new Divider(height: 1),
-                ListTile(
-                    leading: Icon(Icons.attach_money), title: Text('Balances'), enabled: hasValidAccount, trailing: Icon(Icons.arrow_forward_ios),),
+                    leading: Icon(Icons.attach_money), title: Text('Balances'), enabled: hasValidAccount),
                new Divider(height: 1),
                 ListTile(leading: Icon(Icons.format_list_bulleted),
-                    title: Text('Open Orders'), enabled: hasValidAccount, trailing: Icon(Icons.arrow_forward_ios),),
+                    title: Text('Open Orders'), enabled: hasValidAccount),
                new Divider(height: 1),
                 ListTile(leading: Icon(Icons.view_list),
-                    title: Text('Orders History'), enabled: hasValidAccount, trailing: Icon(Icons.arrow_forward_ios),),
+                    title: Text('Orders History'), enabled: hasValidAccount),
                new Divider(height: 1),
                 ListTile(leading: Icon(Icons.monetization_on),
-                    title: Text('Funds History'), enabled: hasValidAccount, trailing: Icon(Icons.arrow_forward_ios),),
+                    title: Text('Funds History'), enabled: hasValidAccount),
                new Divider(height: 1),
-                ListTile(leading: Icon(Icons.settings), title: Text('Settings'), trailing: Icon(Icons.arrow_forward_ios),),
+                ListTile(leading: Icon(Icons.settings), title: Text('Settings')),
                new Divider(height: 1),
-                ListTile(leading: Icon(Icons.view_list), title: Text('News'), trailing: Icon(Icons.arrow_forward_ios),),
+                ListTile(leading: Icon(Icons.view_list), title: Text('News')),
                new Divider(height: 1),
-                ListTile(leading: Icon(Icons.info), title: Text('About'), trailing: Icon(Icons.arrow_forward_ios),),
+                ListTile(leading: Icon(Icons.info), title: Text('About')),
                new Divider(height: 1),
               ],
 

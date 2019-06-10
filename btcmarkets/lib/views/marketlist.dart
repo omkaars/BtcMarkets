@@ -1,7 +1,10 @@
+import 'package:btcmarkets/models/marketdata.dart';
 import 'package:btcmarkets/providers/appdataprovider.dart';
-import 'package:btcmarkets/viewmodels/appdatamodel.dart';
+import 'package:flutter_sticky_header/flutter_sticky_header.dart';
 
 import 'package:flutter/material.dart';
+
+import 'marketpair.dart';
 
 class MarketList extends StatefulWidget {
   MarketList({Key key, this.title}) : super(key: key);
@@ -14,10 +17,16 @@ class MarketList extends StatefulWidget {
 
 class _MarketListState extends State<MarketList> with AutomaticKeepAliveClientMixin<MarketList>
 {
-
-
-
   _MarketListState();
+
+  List<MarketPair> _marketPairs;
+
+  @override
+  void initState()
+  {
+    super.initState();
+    _marketPairs = new List<MarketPair>();
+  }
 
   Future<Null> _onRefresh() async
   {
@@ -25,182 +34,69 @@ class _MarketListState extends State<MarketList> with AutomaticKeepAliveClientMi
     return null;
   }
 
+  List<Widget> _getMarketGroupList(List<MarketData> markets)
+  {
+     List<Widget> list = new List<Widget>();
+     var count = markets.length;
+     var index = 0;
+     for(var market in markets)
+     {
+       var item = new MarketPair(market: market,);
+        _marketPairs.add(item);
+        
+        list.add(item);
+        if(index < count-1)
+          list.add(Divider(height: 1,));
 
+        index++;
+     }
+    return list;
+  }
   Widget _buildUI()
   {
 
     var model = AppDataProvider.of(context).model;
-    var markets = model.markets;
+    var marketsGroups = model.marketsGroups;
       print("Calling buildUI");
       Color _titleColor = Theme.of(context).accentColor;
-      int count = 1;
+      Color _textColor = Colors.white;
 
-     var listView =     ListView.separated(
-       separatorBuilder: (context, length)=> Divider(height: 1),
-       scrollDirection: Axis.vertical,
+      List<SliverStickyHeader> stickyHeaders = new List<SliverStickyHeader>();
+      for(var marketGroup in marketsGroups)
+      {
+       
+         var stickyHeader = SliverStickyHeader(
+            header: Container(
+              height: 40,
+              padding: EdgeInsets.all(10),
+              color: _titleColor,
+              child: Text(
+                
+                marketGroup.groupName,
+                style: TextStyle(color: _textColor, fontWeight: FontWeight.bold, fontSize: 16)
+              ),
+            ),
+            sliver: new SliverList(
+              
+              delegate: SliverChildListDelegate(
+                    _getMarketGroupList(marketGroup.markets)
+                )
+              ),
+            );
 
-       itemCount: markets.length,
-       itemBuilder: (BuildContext context, int index){
+          stickyHeaders.add(stickyHeader);
+      }
 
-
-         var market = markets[index];
-         return
-           InkWell(
-
-               child: Container(
-                 padding: EdgeInsets.all(10),
-                 child:
-
-                 Row(
-
-                   children: <Widget>[
-                     Expanded(
-                         flex:2,
-                         child: Text(market.instrument, style: TextStyle(fontWeight: FontWeight.bold),)
-                     ),
-                     Expanded(
-                         flex:4,
-                         child: Column(
-                           children: <Widget>[
-                             Text(market.lastPrice.toString()),
-                             Text(market.volume24h.toString())
-                           ],
-                         )
-                     ),
-                     Expanded(
-                         flex:4,
-                         child: Column(
-                           children: <Widget>[
-                             Text(market.lastPrice.toString()),
-                             Text(market.volume24h.toString())
-                           ],
-                         )
-                     )
-                   ],
-                 ),
-               )
-           );
-       },
-     );
-
-//     var listView = ListView(
-//           addAutomaticKeepAlives: wantKeepAlive,
-//           padding: EdgeInsets.all(0),
-//           children: <Widget>[
-// //            SingleChildScrollView(
-// //
-// //                scrollDirection: Axis.vertical,
-// //                padding: EdgeInsets.all(0),
-// //                child:
-//                 DataTable(
-
-//                   columns: [
-
-//                     DataColumn(
-
-//                       label: Text("Coin", style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 16), ),
-//                       tooltip: "Coin",
-
-//                     ),
-//                     DataColumn(
-
-//                         label: Text("Last Price",style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold,  fontSize: 16), ),
-//                         tooltip: "Price",
-
-//   ),
-//                     DataColumn(
-
-//                         label: Text("Vol",style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold,  fontSize: 16), ),
-//                         tooltip: "Volume",
-
-
-//                     ),
-//                   ],
-//                   rows: AppDataProvider.of(context).model.markets.map((market)=>
-//                       DataRow(
-//                           cells: [
-
-//                             DataCell(
-//                                Text(market.instrument,style: TextStyle(color: _titleColor, fontWeight: FontWeight.bold, fontSize: 16)),
-
-
-// //                              Row(
-// //                                 children: <Widget>[
-// //                                   Expanded(
-// //
-// //                                       flex:2,
-// //                                       child:Text((count++).toString(),textAlign: TextAlign.left,)
-// //                                   ),
-// //                                   Expanded(
-// //                                       flex: 8,
-// //                                       child:
-// //                                   ),
-// //                                 ],
-// //                              )
-//                             ),
-//                             DataCell(
-//                               new Container(
-//                                 child:     new Column(
-//                                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-//                                   children: <Widget>[
-//                                     Text(market.lastPrice.toString()),
-//                                     Text(market.volume24h.toString())
-//                                   ],
-//                                 ),
-//                               )),
-//                             DataCell(
-//                                 Text(market.volume24h.toString()),
-
-//                             )
-//                           ]
-//                       )
-//                   ).toList(),
-
-//                 )
-//            // )
-//           ],
-//         );
-
+      var listView = CustomScrollView(
+        slivers: stickyHeaders,
+      );
 
     return
-//      Container(
-//      child:Column(
-//          mainAxisSize: MainAxisSize.max,
-//          children: <Widget>[
-//            Container(
-//              height: 50,
-//              color: Theme.of(context).accentColor,
-//              padding: EdgeInsets.all(10),
-//              child:
-//              Row(
-//
-//                children: <Widget>[
-//                  Expanded(
-//                      flex:2,
-//                      child: Text("Coin")
-//                  ),
-//                  Expanded(
-//                      flex:4,
-//                      child: Text("Price")
-//                  ),
-//                  Expanded(
-//                      flex:4,
-//                      child: Text("Volume")
-//                  )
-//                ],
-//              ),
-//             ),
-
             RefreshIndicator(
 
                 onRefresh: _onRefresh,
                 child: listView,
             );
-
-//          ],
-//      )
-//      );
-
   }
 
   @override
@@ -212,14 +108,7 @@ class _MarketListState extends State<MarketList> with AutomaticKeepAliveClientMi
       stream: model.marketsRefreshStream,
       initialData: [],
       builder: (BuildContext context, AsyncSnapshot snapshot){
-        
-        if(model.isLoading)
-        {
-          return Center(
-            child: CircularProgressIndicator(),
-          );
-
-        }
+       
         try {
           print("snapshot ${snapshot.data}");
           if (snapshot.hasError) {
@@ -241,7 +130,7 @@ class _MarketListState extends State<MarketList> with AutomaticKeepAliveClientMi
   }
 
   @override
-  // TODO: implement wantKeepAlive
+ 
   bool get wantKeepAlive => true;
 
 }

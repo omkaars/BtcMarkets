@@ -49,7 +49,7 @@ class BtcMarketsApp extends StatelessWidget
       child:
        MaterialApp(
        title: 'BTC Markets',
-       theme: lightTheme,
+       theme: darkTheme,
         home: BottomMenuController(),
        routes: <String, WidgetBuilder>{
 
@@ -122,14 +122,36 @@ class _BottomMenuControllerState
 
   );
 
+  bool _loading = false;
   @override
   Widget build(BuildContext context) {
 
-    return
+    var model = AppDataProvider.of(context).model;
+    model.pageLoadingStream.listen((loading){
+      setState(() {
+      _loading = loading;
+      });
+      
+    });
+
+    print("building app ui");
+    return Stack(
+      
+      children : [
                  Scaffold(
                 bottomNavigationBar: _bottomNavigationBar(_selectedIndex),
                 body: pages[_selectedIndex]
              // )
-            );
+            ),
+             Opacity(
+               opacity: _loading? 1.0:0.0,
+            child: Center(
+              child: CircularProgressIndicator(
+               
+                ),
+            ),
+          ),
+      ]
+    );
   }
 }
