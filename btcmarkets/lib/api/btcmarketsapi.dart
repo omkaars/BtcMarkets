@@ -137,6 +137,8 @@ class Market {
 
   double volume24h;
 
+  String get pair => "$instrument-$currency";
+
   Market() {}
   Market.fromTick(Tick tick) {
     if (tick == null) return;
@@ -535,23 +537,23 @@ class BtcMarketSocketsV2 {
       _channel = IOWebSocketChannel.connect(_socketUrl);
 
       if (_channel != null) {
-        print('Connected success');
+       // print('Connected success');
         _socketState = SocketState.open;
 
-        print('Listening');
+        //print('Listening');
         _channel.stream.listen((message) {
-          print('received message ${message}');
+          //print('received message $message');
           _controller.sink.add(message);
         }, onError: (error, StackTrace stackTrace) {
-          print('received error ${error} ${stackTrace}');
+          //print('received error $error $stackTrace');
         }, onDone: () {
           _socketState = SocketState.close;
 
-          print('onDone received');
+          //print('onDone received');
         });
       }
     } catch (e) {
-      print("An error occurred ${e}");
+      //print("An error occurred $e");
     }
   }
 
@@ -598,7 +600,7 @@ class BtcMarketSocketsV2 {
   void close() async {
     try {
       if (_channel != null) {
-        print("Closing ");
+      //  print("Closing ");
         _channel.sink.close();
         _socketState = SocketState.close;
       }
@@ -609,6 +611,11 @@ class BtcMarketSocketsV2 {
       // }
 
     } catch (e) {}
+  }
+
+  void dispose()
+  {
+     close();
   }
 
   String _getSignature(String secret, String message) {

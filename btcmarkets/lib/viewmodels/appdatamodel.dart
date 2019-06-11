@@ -9,6 +9,9 @@ import '../models/marketdata.dart';
 class Constants {
   static const String BTC = "BTC";
   static const String AUD = "AUD";
+  static const String Favourites = "Favourites";
+  static const String AudMarkets = "AUD Markets";
+  static const String BtcMarkets = "BTC Markets";
 }
 
 class AppDataModel {
@@ -65,7 +68,6 @@ StreamSink<String> get favMarketsRefreshSink => _favMarketsRefreshController.sin
 
     isLoading = true;  
     pageLoadingSink.add(true);
-   
 
     var data = await _api.getMarkets();
 
@@ -84,22 +86,19 @@ StreamSink<String> get favMarketsRefreshSink => _favMarketsRefreshController.sin
       marketData.bestAsk = market.bestAsk;
       marketData.bestBid = market.bestBid;
       marketData.timestamp = market.timestamp;
-      marketData.isStarred = favMarkets.any((m) =>
-          m.instrument == market.instrument &&
-          m.currency == market.currency &&
-          m.isStarred);
+      marketData.isStarred = favMarkets.any((m) => m.pair == market.pair &&  m.isStarred);
 
       marketData.name = MarketHelper.getMarketName(market.instrument.toLowerCase());
       
       if (market.currency == Constants.BTC) {
         marketData.groupId = 3;
-        marketData.group = "BTC Markets";
+        marketData.group = Constants.BtcMarkets;
       } else if (market.currency == Constants.AUD) {
         marketData.groupId = 2;
-        marketData.group = "AUD Markets";
+        marketData.group = Constants.AudMarkets;
       } else if (marketData.isStarred) {
         marketData.groupId = 1;
-        marketData.group = "Favourites";
+        marketData.group = Constants.Favourites;
       }
 
       if (market.currency == Constants.AUD) {
@@ -114,17 +113,17 @@ StreamSink<String> get favMarketsRefreshSink => _favMarketsRefreshController.sin
 
     var favGroup = new MarketsGroup();
     favGroup.groupId = 1;
-    favGroup.groupName = "Favourites";
+    favGroup.groupName = Constants.Favourites;
     favGroup.markets = favMarkets;
 
     var audGroup = new MarketsGroup();
     audGroup.groupId = 2;
-    audGroup.groupName = "AUD Markets";
+    audGroup.groupName = Constants.AudMarkets;
     audGroup.markets = audMarkets;
     
     var btcGroup = new MarketsGroup();
     btcGroup.groupId = 3;
-    btcGroup.groupName = "BTC Markets";
+    btcGroup.groupName = Constants.BtcMarkets;
     btcGroup.markets = btcMarkets;
     
     marketsGroups.add(favGroup);
@@ -135,6 +134,94 @@ StreamSink<String> get favMarketsRefreshSink => _favMarketsRefreshController.sin
     isLoading = false;
     marketsRefreshSink.add("Refresh");
     pageLoadingSink.add(false);
+
+  }
+
+
+  void updateFavourite(MarketData market, bool add)
+  {
+
+     bool refresh = false;
+      debugPrint("Updating favourite ${market.pair} -> $add");
+   
+       debugPrint("FavGroup found");
+       market.isStarred = add;
+       refresh = true;
+       if(add)
+       {
+           debugPrint("Adding new");
+          
+          var isAdded = favMarkets.any((m)=>m.pair == market.pair);
+          debugPrint("Isadded $isAdded");
+         if(!isAdded)
+         {
+            debugPrint("Adding found");
+           favMarkets.add(market);
+           refresh = true;
+         }
+       }
+       else
+       {
+           debugPrint("Removing");
+          var favMarket = favMarkets.any((m)=>m.pair == market.pair);
+           
+         if(favMarket != null)
+         {
+           favMarkets.removeWhere((m)=>m.pair == market.pair);
+           refresh = true;
+         }
+       }
+        
+
+      // var favGroup = marketsGroups.firstWhere((group) => group.groupName == Constants.Favourites);
+      // if(favGroup != null)
+      // {
+      //  MarketsGroup curGroup;
+      //     if(market.currency == Constants.BTC)
+      //     {
+      //       curGroup = marketsGroups.firstWhere((group) => group.groupName == Constants.BtcMarkets);
+      //     }
+      //     else
+      //     if(market.currency == Constants.AUD)
+      //     {
+      //       curGroup = marketsGroups.firstWhere((group) => group.groupName == Constants.AudMarkets);
+      //     }
+
+      //     if(curGroup != null)
+      //     {
+      //        var curMarket = curGroup.markets.firstWhere((m)=>m.pair == market.pair);
+      //        if(curMarket != null)
+      //        {
+      //          curMarket.isStarred = add;
+      //          refresh = true;
+      //        }
+      //     }
+
+      //   if(add)
+      //   {
+      //     market.isStarred = add;
+      //     favMarkets.add(market);
+
+          
+      //     refresh = true;
+      //    // favGroup.markets.add(market);
+      //   }
+      //   else
+      //   {
+      //     var favMarket = favMarkets.firstWhere((m)=> m.pair == market.pair);
+      //     if(favMarket != null)
+      //     {
+      //       favMarket.isStarred = add;
+      //       favMarkets.removeWhere((m)=> m.pair == market.pair);
+      //       refresh = true;
+      //     }
+      //   }
+      // }
+
+      if(refresh)
+      {
+         marketsRefreshSink.add("Refresh");
+      }
 
   }
 

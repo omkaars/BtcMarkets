@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:btcmarkets/models/marketdata.dart';
+import 'package:btcmarkets/providers/appdataprovider.dart';
 
 import 'package:flutter/material.dart';
 
@@ -31,17 +32,38 @@ class _MarketPairState extends State<MarketPair> with AutomaticKeepAliveClientMi
 {
   _MarketPairState();
   MarketData _market;
-  MarketText _price, _volume;
+  Text _price, _volume;
   StreamSubscription _notification;
+  IconData _favouriteIcon;
+  bool _isFavourite;
 
   @override
   void initState()
   {
     super.initState();
-
-    _market = this.widget.market;
       _notification = widget.changeMarketNotifier.stream.listen((market){
       changeMarket(market);
+    });
+
+   
+    _market = this.widget.market;
+    if(_market == null)
+    {
+      return;
+    }
+     _isFavourite = _market.isStarred;
+    _favouriteIcon= _isFavourite?Icons.favorite:Icons.favorite_border;
+    
+  }
+
+  void setFavourite()
+  {
+    setState((){
+      _isFavourite = !_isFavourite;
+      _favouriteIcon = _isFavourite?Icons.favorite:Icons.favorite_border;
+
+       var model = AppDataProvider.of(context).model;
+       model.updateFavourite(_market, _isFavourite);
     });
   }
   
@@ -63,25 +85,29 @@ class _MarketPairState extends State<MarketPair> with AutomaticKeepAliveClientMi
     {
       return;
     }
-    
-    if(_market.lastPrice != market.lastPrice)
-    {
-      _price.setText(market.lastPrice.toString());
-    }
 
-    if(_market.volume24h != market.volume24h)
-    {
-      _volume.setText(market.volume24h.toString());
-    } 
+    setState((){
+      // if(_market.lastPrice != market.lastPrice)
+      // {
+      //   _price.setText(market.lastPrice.toString());
+      // }
+
+      // if(_market.volume24h != market.volume24h)
+      // {
+      //   _volume.setText(market.volume24h.toString());
+      // } 
+          _market = market;
+    });
+
   }
 
   void setPrice(String price)
   {
-    _price.setText(price);
+    //_price.setText(price);
   }
   void setVolume(String volume)
   {
-    _volume.setText(volume);
+    //_volume.setText(volume);
   }
 
   @override
@@ -99,9 +125,12 @@ class _MarketPairState extends State<MarketPair> with AutomaticKeepAliveClientMi
 
   Widget _getMarketPair()
   {
+     _isFavourite = _market.isStarred;
+      _favouriteIcon = _isFavourite?Icons.favorite:Icons.favorite_border;
+
     var market = _market;
-    _price = MarketText(text:market.lastPrice.toString());
-    _volume = MarketText(text:market.volume24h.toString());
+    _price = Text(market.lastPrice.toString());
+    _volume = Text(market.volume24h.toString());
       var item = InkWell(
 
                child: Container(
@@ -158,19 +187,31 @@ class _MarketPairState extends State<MarketPair> with AutomaticKeepAliveClientMi
                      ),
                      Expanded(
                        flex: 1,
-                       child: Column(
-                           crossAxisAlignment: CrossAxisAlignment.end,
-                           children: <Widget>[
-                             Icon(
-                               Icons.favorite_border,
+                      
+                       child: 
+                        Container(
+                          margin: EdgeInsets.all(0),
+                          
+                          height: 24,
+                          width: 24,
+                        //Column(
+                           //mainAxisAlignment: MainAxisAlignment.start,
+                           //crossAxisAlignment: CrossAxisAlignment.end,
+                           //children: <Widget>[
+                             child: IconButton(
+                               icon: new Icon(_favouriteIcon,color: Theme.of(context).accentColor), 
                                
-                               color: Theme.of(context).accentColor),
-                              Icon(
-                               Icons.notifications_none,
-                              
-                               color: Theme.of(context).primaryColor),
-                           ],
-                         )
+                               onPressed: () {
+                                 setFavourite();
+                               },
+                               ),
+                               )
+                              // Icon(
+                              //  Icons.notifications_none,
+                               
+                              //  color: Theme.of(context).primaryColor),
+                           //],
+                         //)
                      )
                    ],
                  ),
@@ -185,7 +226,7 @@ class _MarketPairState extends State<MarketPair> with AutomaticKeepAliveClientMi
   @override
   Widget build(BuildContext context) {
     super.build(context);
-   
+    debugPrint("Market pair is building");
     return _getMarketPair();
   }
 

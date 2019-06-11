@@ -7,5 +7,5 @@ class MarketData extends Market
   int groupId;
   bool isStarred;
 
-  String get pair => "$instrument-$currency";
+  
 }
