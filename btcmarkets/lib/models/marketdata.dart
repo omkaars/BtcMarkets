@@ -8,4 +8,6 @@ class MarketData extends Market
   bool isStarred;
 
   
+  double holdings;
+  
 }

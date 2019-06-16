@@ -31,6 +31,29 @@ class AppData {
     _markets = await getMarkets();
   }
 
+  void getHistoricalTicks() async
+  {
+    try{
+
+      var since = DateTime.now().subtract(new Duration(days: 1));
+      var data = await _api.getHistoricalTicks("LTC", "BTC", TickTime.hour, since, true);
+      var ticks = data.ticks;
+      print(ticks.length);
+      ticks.sort((a,b)=>a.timeStamp.compareTo(b.timeStamp));
+
+      for(var index=0;index<ticks.length;index++)
+      {
+        var tick = ticks[index];
+       // print(DateTime.fromMillisecondsSinceEpoch(tick.timeStamp));
+        print(tick.toJson());
+      }
+
+    }
+    catch(e)
+    {
+      print(e);
+    }
+  }
   Future<List<Market>> getMarkets() async {
     List<Market> markets = new List<Market>();
 
@@ -71,12 +94,13 @@ void main() async {
 //print(jsonEncode(market));
   // print("Retrieving markets from ");
 
-  // var appData = new AppData();
+  var appData = new AppData();
 
-  // var apiKey = "ac400ad8-6051-4dc9-aaf3-2dd3f8a4c0d6";
-  // var secret =
-  //     "zE4rPkfizqOYQvbYQhOths6KiS2SyBKI3zRbdbu5qM1ha4VgPu4Om/9zaUAuFm80zGCiVSbSD0NK/ar3BWzpJg==";
-  // appData.updateCredentials(apiKey, secret);
+  var apiKey = "ac400ad8-6051-4dc9-aaf3-2dd3f8a4c0d6";
+  var secret =
+      "zE4rPkfizqOYQvbYQhOths6KiS2SyBKI3zRbdbu5qM1ha4VgPu4Om/9zaUAuFm80zGCiVSbSD0NK/ar3BWzpJg==";
+  appData.updateCredentials(apiKey, secret);
+  appData.getHistoricalTicks();
 
   // // var balances = await appData.api.getAccountBalance();
   // // print(json.encode(balances));
@@ -107,9 +131,8 @@ void main() async {
   //   msg["secret"] = "Secret";
 
   //   print(json.encode(msg));
-  testSockets();
+  //testSockets();
 }
-
 void testSockets() {
 
   var apiKey = "ac400ad8-6051-4dc9-aaf3-2dd3f8a4c0d6";

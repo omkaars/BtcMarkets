@@ -1,14 +1,16 @@
 import 'package:btcmarkets/models/marketdata.dart';
+import 'package:btcmarkets/models/marketsgroup.dart';
 import 'package:btcmarkets/providers/appdataprovider.dart';
-import 'package:btcmarkets/views/marketdetail.dart';
-import 'package:flutter/material.dart';
-import '../constants.dart';
+import 'package:flutter_sticky_header/flutter_sticky_header.dart';
 
+import 'package:flutter/material.dart';
+
+import 'marketpair.dart';
 
 class MarketList extends StatefulWidget {
-  MarketList({Key key, this.group}) : super(key: key);
+  MarketList({Key key, this.title}) : super(key: key);
 
-  final String group;
+  final String title;
 
   @override
   _MarketListState createState() => _MarketListState();
@@ -27,64 +29,19 @@ class _MarketListState extends State<MarketList> with AutomaticKeepAliveClientMi
 
   Future<Null> _onRefresh() async
   {
-    await AppDataProvider.of(context).model.refreshMarkets(isPullToRefesh: true);
+    await AppDataProvider.of(context).model.refreshMarkets();
     return null;
   }
 
-  void setFavourite(MarketData market)
+  List<Widget> _getMarketGroupList(List<MarketData> markets)
   {
-    setState((){
-      market.isStarred = !market.isStarred;
-       var model = AppDataProvider.of(context).model;
-       model.updateFavourite(market, market.isStarred);
-    });
-  }
-  
-  void showMarketDetail(MarketData market) async
-  {
-       var model = AppDataProvider.of(context).model;
-      // await model.refreshMarketHistory(market, "1D");
-      var marketDetail = new MarketDetailView(market: market);
-      Navigator.push(context,  MaterialPageRoute(builder: (context) => marketDetail));
-  }
-  Widget _buildUI()
-  {
+     List<Widget> list = new List<Widget>();
+     var count = markets.length;
+     var index = 0;
+     for(var market in markets)
+     {
+       var item = InkWell(
 
-    var model = AppDataProvider.of(context).model;
-   
-    debugPrint("Calling buildUI");
-   
-    List<MarketData> markets = new List<MarketData>();
-    if(widget.group == Constants.BtcMarkets)
-    {
-       markets = model.btcMarkets;
-    }
-    else
-    if(widget.group == Constants.AudMarkets)
-    {
-      markets = model.audMarkets;
-    }
-    if(widget.group == Constants.Favourites)
-    {
-      markets = model.favMarkets;
-    }
-  
-  var accentColor = Theme.of(context).accentColor;
-  var defaultTextStyle = Theme.of(context).textTheme.body1;
-  var bigStyle = Theme.of(context).textTheme.subtitle;
-  var hintColor = Theme.of(context).hintColor;
-
-   var listView = ListView.separated(
-        separatorBuilder: (context, length)=> Divider(height: 1),
-        scrollDirection: Axis.vertical,
-        itemCount: markets == null ?  0 : markets.length,
-         itemBuilder: (BuildContext context, int index){
-        
-           var market = markets[index];
-           return InkWell(
-                onTap: (){
-                  showMarketDetail(market);
-                },
                child: Container(
                  padding: EdgeInsets.all(10),
                  child:
@@ -107,12 +64,12 @@ class _MarketListState extends State<MarketList> with AutomaticKeepAliveClientMi
                              Spacer(flex:4),
                             Expanded(
                             flex:80,
-                            child: Text(market.instrument, style: bigStyle,
+                            child: Text(market.instrument, style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                            )
                          ],),
                          
-                         Text(market.name, textAlign: TextAlign.start, style:TextStyle(color:hintColor) )
+                         Text(market.name, textAlign: TextAlign.start, )
 
                          ],)
                          
@@ -122,13 +79,8 @@ class _MarketListState extends State<MarketList> with AutomaticKeepAliveClientMi
                          child: Column(
                            crossAxisAlignment: CrossAxisAlignment.end,
                            children: <Widget>[
-                             RichText(
-                              text: TextSpan( children: [
-                                TextSpan(text: market.getSymbol(), style: TextStyle(color: hintColor)),
-                                TextSpan(text: market.priceString, style: defaultTextStyle)
-                              ]),
-                            ),
-                             Text(market.volume24h.toString(), style: TextStyle(color: hintColor))
+                             Text(market.lastPrice.toString()),
+                             Text(market.volume24h.toString())
                            ],
                          )
                      ),
@@ -137,8 +89,8 @@ class _MarketListState extends State<MarketList> with AutomaticKeepAliveClientMi
                          child: Column(
                            crossAxisAlignment: CrossAxisAlignment.end,
                            children: <Widget>[
-                            Text(market.holdings.toString()),
-                            Text(market.volume24h.toString(), style: TextStyle(color: hintColor))
+                            Text(market.lastPrice.toString()),
+                            Text(market.volume24h.toString())
                            ],
                          )
                      ),
@@ -156,7 +108,7 @@ class _MarketListState extends State<MarketList> with AutomaticKeepAliveClientMi
                            //crossAxisAlignment: CrossAxisAlignment.end,
                            //children: <Widget>[
                              child: IconButton(
-                               icon: new Icon(market.isStarred?Icons.favorite:Icons.favorite_border,color: Theme.of(context).hintColor), 
+                               icon: new Icon(market.isStarred?Icons.favorite:Icons.favorite_border,color: Theme.of(context).accentColor), 
                                
                                onPressed: () {
                                  setFavourite(market);
@@ -174,22 +126,81 @@ class _MarketListState extends State<MarketList> with AutomaticKeepAliveClientMi
                  ),
                )
            );
-         },
+        
+        
+        list.add(item);
+        if(index < count-1)
+          list.add(Divider(height: 1,));
 
-   );
+        index++;
+     }
+    return list;
+  }
 
+  void setFavourite(MarketData market)
+  {
+    setState((){
+      market.isStarred = !market.isStarred;
+       var model = AppDataProvider.of(context).model;
+       model.updateFavourite(market, market.isStarred);
+    });
+  }
   
+  Widget _buildUI()
+  {
+
+    var model = AppDataProvider.of(context).model;
+    var marketsGroups = model.marketsGroups;
+      debugPrint("Calling buildUI");
+     
+      List<SliverStickyHeader> stickyHeaders = new List<SliverStickyHeader>();
+      for(var marketGroup in marketsGroups)
+      {
+        
+          var stickyHeader = buildGroup(marketGroup);
+
+          stickyHeaders.add(stickyHeader);
+      }
+
+      var listView = CustomScrollView(
+        slivers: stickyHeaders,
+      );
+
     return
             RefreshIndicator(
-                displacement: 100,
 
-                onRefresh: ()=> _onRefresh(),
+                onRefresh: _onRefresh,
                 child: listView,
-                
             );
   }
 
- 
+  SliverStickyHeader buildGroup(MarketsGroup marketGroup)
+  {
+     Color _titleColor = Theme.of(context).accentColor;
+      Color _textColor = Colors.white;
+
+   var stickyHeader = SliverStickyHeader(
+            header: Container(
+              height: 40,
+              padding: EdgeInsets.all(10),
+              color: _titleColor,
+              child: Text(
+                
+                marketGroup.groupName,
+                style: TextStyle(color: _textColor, fontWeight: FontWeight.bold, fontSize: 16)
+              ),
+            ),
+            sliver: new SliverList(
+              
+              delegate: SliverChildListDelegate(
+                    _getMarketGroupList(marketGroup.markets)
+                )
+              ),
+            );
+
+            return stickyHeader;
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);

@@ -48,7 +48,7 @@ class MarketDataBlocProvider extends InheritedWidget
   final MarketDataBloc bloc;
   final Widget child;
 
-  MarketDataBlocProvider({this.bloc, this.child}) : super(child: child);
+  const MarketDataBlocProvider({this.bloc, this.child}) : super(child: child);
   static MarketDataBlocProvider of(BuildContext context) =>
       context.inheritFromWidgetOfExactType(MarketDataBlocProvider);
 

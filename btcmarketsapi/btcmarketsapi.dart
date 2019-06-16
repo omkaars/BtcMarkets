@@ -7,6 +7,7 @@ import "package:pointycastle/pointycastle.dart";
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/status.dart' as status;
 
+
 class ApiConstants {
   static const double CurrencyDecimal = 100000000;
 }
@@ -253,6 +254,124 @@ class AccountBalances extends ApiResponse {
   }
 }
 
+
+enum TickTime
+{
+  minute,
+  hour,
+  day,
+}
+
+class Paging
+{
+   Paging();
+
+   String newer;
+   String older;
+
+   Paging.fromJson(json)
+    : newer = json['newer'],
+      older = json['older'];
+
+   Map<String, dynamic> toJson() => 
+   {
+     "newer" : newer,
+     "older" : older
+   };
+}
+
+class HistoricalTick 
+{
+
+  int timeStamp;
+  DateTime get dateTime => DateTime.fromMillisecondsSinceEpoch(timeStamp);
+
+  int open;
+  double get openValue => open > 0 ? (open / ApiConstants.CurrencyDecimal) : 0;
+
+  int high;
+  double get highValue => high > 0 ? (high / ApiConstants.CurrencyDecimal) : 0;
+  
+  int low;
+  double get lowValue => low > 0 ? (low / ApiConstants.CurrencyDecimal) : 0;
+
+  int close;
+  double get closeValue => close > 0 ? (close / ApiConstants.CurrencyDecimal) : 0;
+
+  int volume;
+  double get volumeValue => volume > 0 ? (volume / ApiConstants.CurrencyDecimal) : 0;
+
+
+  HistoricalTick.fromJson(json)
+      : timeStamp = json['timestamp'],
+        open = json['open'],
+        high = json['high'],
+        low  = json['low'],
+        close = json['close'],
+        volume = json['volume'];
+
+  Map<String, dynamic> toJson() => {
+        'timestamp': timeStamp,
+        'dateTime' : dateTime,
+        'open': open,
+        'openValue':openValue,
+        'high': high,
+        'highValue': highValue,
+        'low' : low,
+        'lowValue':lowValue,
+        'close' : close,
+        'closeValue': closeValue,
+        'volume' : volume,
+        'volumeValue': volumeValue
+      };
+}
+class HistoricalTicks extends ApiResponse {
+  Paging paging = new Paging();
+  List<HistoricalTick> ticks = new List<HistoricalTick>();
+
+  HistoricalTicks() {}
+  HistoricalTicks.fromJson(jsonData) {
+    try {
+      bool successFlag;
+      
+      try {
+        successFlag = jsonData['success'];
+      } catch (e) {}
+
+      if (successFlag) {
+        this.success = true;
+        
+        var pager = jsonData['paging'];
+        paging = Paging.fromJson(pager);
+
+        var jsonTicks = jsonData['ticks'];
+        for (var data in jsonTicks) {
+          ticks.add(HistoricalTick.fromJson(data));
+        }
+      } else {
+        this.success = false;
+        this.errorCode = jsonData['errorCode'];
+        this.errorMessage = jsonData['errorMessage'];
+      }
+    } catch (bex) {
+      this.success = false;
+      this.errorMessage = bex.toString();
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    var jsonData = {
+      'success': success,
+      'errorCode': errorCode,
+      'errorMessage': errorMessage,
+      'paging' : paging,
+      'ticks': ticks
+    };
+    return jsonData;
+  }
+}
+
+
 class TradingFee extends ApiResponse {
   int tradingFeeRate;
   int volume30Day;
@@ -429,6 +548,8 @@ class BtcMarketsApi {
     return markets;
   }
 
+
+
   /*************
    *  Gets market tick of given instrument and currency
    * 
@@ -446,12 +567,54 @@ class BtcMarketsApi {
 
       tick = Tick.fromJson(response.data);
     } catch (e) {
+
       tick.success = false;
       tick.errorCode = 101;
       tick.errorMessage = e.toString();
     }
 
     return tick;
+  }
+
+Future<HistoricalTicks> getHistoricalTicks(String instrument, String currency, TickTime tickTime, DateTime since, bool forward) async {
+    HistoricalTicks ticks = new HistoricalTicks();
+
+    try {
+      instrument ??= "BTC";
+
+      currency ??= "AUD";
+
+      String timeSpan;
+      switch(tickTime)
+      {
+        case TickTime.day:{
+          timeSpan = "day";
+        }
+        break;
+        case TickTime.hour:
+        {
+          timeSpan = "hour";
+        }
+        break;
+        default:
+          timeSpan = "minute";
+          break;
+      }
+
+      int sinceTime = since.millisecondsSinceEpoch;
+
+      var response =
+          await _dio.get("${_baseUrl}/v2/market/${instrument}/${currency}/tickByTime/$timeSpan?since=$sinceTime&indexForward=$forward");
+
+      ticks = HistoricalTicks.fromJson(response.data);
+
+    } catch (e) {
+      ticks.success = false;
+      ticks.errorCode = 101;
+      ticks.errorMessage = e.toString();
+    }
+
+    return ticks;
   }
 
   /**
