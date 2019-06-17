@@ -24,16 +24,14 @@ class MarketDetailView extends StatefulWidget {
 
 class _MarketDetailState extends State<MarketDetailView> {
   MarketData market;
-  var _history = [];
-  String _high, _low;
-  var duration = "1D";
-  void refreshHistory(String dur) {
+ 
+  var duration="1D";
+  void refreshHistory(String dur) async {
+    duration = dur;
+    var model = AppDataProvider.of(context).model;
+    await model.refreshMarketHistory(widget.market, duration);
 
-      duration = dur;
-    
-    setState(()  {
-     
-    });
+
   }
 
   @override
@@ -46,38 +44,8 @@ class _MarketDetailState extends State<MarketDetailView> {
     }
   }
 
-  void updateHighLow(BuildContext context) {
-    print("loaded frame");
-  }
-
-  void _loadHistory() async {
-    _history.clear();
-    var model = AppDataProvider.of(context).model;
-    var history = model.marketHistory;
-    if (history.isEmpty) {
-      await model.refreshMarketHistory(widget.market, "1D");
-      history = model.marketHistory;
-    }
-
-    if (history.isNotEmpty) {
-      double high = 0.0;
-      double low = history[0].low;
-      for (var h in history) {
-        _history.add({
-          "open": h.open,
-          "close": h.close,
-          "high": h.high,
-          "low": h.low,
-          "volumeto": h.volumeto
-        });
-        if (h.high > high) high = h.high;
-
-        if (h.low < low) low = h.low;
-      }
-
-      _high = high.toString();
-      _low = low.toString();
-    }
+  void updateHighLow(BuildContext context){
+     refreshHistory("1D");
   }
 
   @override
@@ -93,7 +61,9 @@ class _MarketDetailState extends State<MarketDetailView> {
 
     var defaultTextStyle = Theme.of(context).textTheme.body1;
     var bigStyle = Theme.of(context).textTheme.headline;
-   
+
+    var chartPeriods = ["1H","6H","12H","1D","3D","1W","2W","1M","3M","6M","1Y","3Y","ALL"];
+
     return Scaffold(
         appBar: new AppBar(
           title: Row(
@@ -107,7 +77,7 @@ class _MarketDetailState extends State<MarketDetailView> {
               SizedBox(
                 width: 5,
               ),
-              Text("${market.name} (${market.instrument})")
+              Text("${market.name}")
             ],
           ),
         ),
@@ -118,7 +88,6 @@ class _MarketDetailState extends State<MarketDetailView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.start,
               children: <Widget>[
-
                 //Details
                 Container(
                   child: Column(
@@ -139,7 +108,7 @@ class _MarketDetailState extends State<MarketDetailView> {
                           ]),
                         ),
                       ]),
-                      SizedBox(height: 40),
+                      SizedBox(height: 20),
                       Row(
                         children: <Widget>[
                           Column(
@@ -192,148 +161,127 @@ class _MarketDetailState extends State<MarketDetailView> {
                           SizedBox(
                             width: 25,
                           ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: <Widget>[
-                              Row(
+                          StreamBuilder(
+                            stream: model.marketHistoryStream,
+                            builder: (BuildContext buildContext,
+                                AsyncSnapshot<String> snapshot) {
+                              return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.start,
                                 children: <Widget>[
-                                  Text("High",
-                                      style: TextStyle(color: accentColor)),
-                                  SizedBox(
-                                    width: 10,
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      Text("High",
+                                          style: TextStyle(color: accentColor)),
+                                      SizedBox(
+                                        width: 10,
+                                      ),
+                                      RichText(
+                                        text: TextSpan(children: [
+                                          TextSpan(
+                                              text: market.getSymbol(),
+                                              style:
+                                                  TextStyle(color: hintColor)),
+                                          TextSpan(
+                                              text: model.marketHistory.highString,
+                                              style: defaultTextStyle)
+                                        ]),
+                                      )
+                                    ],
                                   ),
-                                  RichText(
-                                    text: TextSpan(children: [
-                                      TextSpan(
-                                          text: market.getSymbol(),
-                                          style: TextStyle(color: hintColor)),
-                                      TextSpan(
-                                          text: _high, style: defaultTextStyle)
-                                    ]),
+                                  SizedBox(height: 10),
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      Text("Low ",
+                                          style: TextStyle(color: accentColor)),
+                                      SizedBox(
+                                        width: 10,
+                                      ),
+                                      RichText(
+                                        text: TextSpan(children: [
+                                          TextSpan(
+                                              text: market.getSymbol(),
+                                              style:
+                                                  TextStyle(color: hintColor)),
+                                          TextSpan(
+                                              text: model.marketHistory.lowString,
+                                              style: defaultTextStyle)
+                                        ]),
+                                      )
+                                    ],
                                   )
                                 ],
-                              ),
-                              SizedBox(height: 10),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Text("Low ",
-                                      style: TextStyle(color: accentColor)),
-                                  SizedBox(
-                                    width: 10,
-                                  ),
-                                  RichText(
-                                    text: TextSpan(children: [
-                                      TextSpan(
-                                          text: market.getSymbol(),
-                                          style: TextStyle(color: hintColor)),
-                                      TextSpan(
-                                          text: _low, style: defaultTextStyle)
-                                    ]),
-                                  )
-                                ],
-                              )
-                            ],
-                          ),
+                              );
+                            },
+                          )
                         ],
                       )
                     ],
                   ),
                 ),
 
-                SizedBox(height: 30),
+                SizedBox(height: 10),
+
+
                 //Charting
                 Container(
                   child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child:
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: <Widget>[
-                          FlatButton( 
+                       
+                      Container(
+                        height: 30,
+                      
+                        padding: EdgeInsets.all(0),
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: chartPeriods.length,
+                        itemBuilder: (BuildContext buildContext, int index){
+                          var period = chartPeriods[index];
+                          return Container(
+                            width:50,
+                             decoration: (duration == period)?  BoxDecoration(
+                                color: accentColor,
+                                borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                             ): null,
                             padding: EdgeInsets.all(0),
-                            child: Text("1H"), onPressed: (){
-                            refreshHistory("1H");
-                          }),
-                          FlatButton( child: Text("3H"), onPressed: (){
-                            refreshHistory("1H");
-                          }),
-                          FlatButton( child: Text("12H"), onPressed: (){
-                            refreshHistory("1H");
-                          }),
-                          FlatButton( child: Text("1D"), onPressed: (){
-                            refreshHistory("1H");
-                          }),
-                          FlatButton( child: Text("3D"), onPressed: (){
-                            refreshHistory("1H");
-                          }),
-                          FlatButton( child: Text("1W"), onPressed: (){
-                            refreshHistory("1H");
-                          }),
-                          FlatButton( child: Text("2W"), onPressed: (){
-                            refreshHistory("1H");
-                          }),
-                          FlatButton( child: Text("1M"), onPressed: (){
-                            refreshHistory("1H");
-                          }),
-                          FlatButton( child: Text("3M"), onPressed: (){
-                            refreshHistory("1H");
-                          }),
-                          FlatButton( child: Text("6D"), onPressed: (){
-                            refreshHistory("1H");
-                          }),
-                          FlatButton( child: Text("1Y"), onPressed: (){
-                            refreshHistory("1H");
-                          }),
-                          FlatButton( child: Text("ALL"), onPressed: (){
-                            refreshHistory("1H");
-                          })
-                        ],
+                            
+                            child:FlatButton(
+                              padding: EdgeInsets.all(0),
+                            child: Text(period, style: Theme.of(context).textTheme.subhead,),
+                            onPressed: (){
+                                setState((){
+                                refreshHistory(period);
+                                });
+                                
+                            },
+                          ));
+                        },
                       ),
                       ),
                       SizedBox(height: 20),
                       Container(
                           height: 250,
-                          child: FutureBuilder(
-                            future:
-                                model.getMarketHistory(widget.market, duration),
+                          child: StreamBuilder(
+                            stream: model.marketHistoryStream,
                             builder: (BuildContext buildContext,
-                                AsyncSnapshot<List<MarketHistory>> snapshot) {
+                                AsyncSnapshot<String> snapshot) {
                               if (snapshot.hasData) {
-                                var data = snapshot.data.reversed.toList();
-                                var history = [];
-
-                                if (data.length > 0) {
-                                  double high = 0.0;
-                                  double low = data[0].low;
-
-                                  for (var h in data) {
-                                    history.add({
-                                      "open": h.open,
-                                      "close": h.close,
-                                      "high": h.high,
-                                      "low": h.low,
-                                      "volumeto": h.volumeto
-                                    });
-                                    if (h.high > high) high = h.high;
-                                    if (h.low < low) low = h.low;
-                                  }
-                                  _history = history;
-                                  _high = high.toString();
-                                  _low = low.toString();
+                                if (model.marketHistory.data.isNotEmpty) {
+                                  var data = model.marketHistory.data.reversed
+                                      .toList();
 
                                   return OHLCVGraph(
-                                      data: history,
+                                      data: data,
                                       enableGridLines: true,
                                       gridLineColor: hintColor,
                                       volumeProp: 0.2);
                                 } else {
-                                  _high = "";
-                                  _low = "";
                                   return Center(
                                       child: Text("No data available."));
                                 }

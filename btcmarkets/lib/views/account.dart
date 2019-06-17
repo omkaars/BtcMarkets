@@ -14,19 +14,42 @@ class AccountView extends StatefulWidget {
 class _AccountViewState extends State<AccountView> {
 
   NavDrawer _navDrawer =  new NavDrawer();
+  int _selectedIndex = 0;
 
   _AccountViewState();
 
   @override
   Widget build(BuildContext context) {
 
-    return new Scaffold(
-        drawer: _navDrawer,
-        appBar:  new AppBar(
-            title: Text("Account")
-        ),
-        body: new Text("Account")
+    return  DefaultTabController(
+      initialIndex: _selectedIndex,
+      length: 4,
+      child:  Scaffold(
+           drawer: _navDrawer,
+           appBar:  new AppBar(
+             title: Text("Account"),
+            bottom: TabBar(
+               isScrollable: true,
+               
+               tabs: [
+                 Tab(text: "Balances",),
+                 Tab(text: "Open Orders"),
+                 Tab(text: "Order History"),
+                 Tab(text: "Fund History"),
+               ],
+             ),
+
+           ),
+           body:  TabBarView(children: <Widget>[
+              Text("Balanaces"),
+              Text("Open orders"),
+              Text("Order history"),
+              Text("Fund history")
+           ],)
+
+       ),
 
     );
+
   }
 }

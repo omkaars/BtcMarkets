@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:btcmarkets/helpers/markethelper.dart';
 import 'package:btcmarkets/models/markethistory.dart';
 import 'package:btcmarkets/models/marketsgroup.dart';
+import 'package:btcmarkets/models/navview.dart';
 import 'package:btcmarkets/models/newsitem.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -17,14 +18,14 @@ class AppDataModel{
 
   final List<MarketData> markets = new List<MarketData>();
 
-  final List<MarketHistory> marketHistory = new List<MarketHistory>();
+  final MarketHistory marketHistory = new MarketHistory();
 
   List<MarketData> get audMarkets =>
       markets.where((m) => m.currency == Constants.AUD).toList();
 
   List<MarketData> get btcMarkets =>
       markets.where((m) => m.currency == Constants.BTC).toList();
-      
+
   List<MarketData> get favMarkets => markets.where((m) => m.isStarred).toList();
 
   final List<String> _favourites = new List<String>();
@@ -43,6 +44,8 @@ class AppDataModel{
   final StreamController<String> _marketHistoryController =
       StreamController<String>.broadcast();
 
+  final StreamController<NavView> _navController = StreamController<NavView>.broadcast();
+
   StreamSink<String> get marketsRefreshSink => _marketsRefreshController.sink;
   Stream<String> get marketsRefreshStream => _marketsRefreshController.stream;
 
@@ -52,8 +55,25 @@ class AppDataModel{
   StreamSink<bool> get pageLoadingSink => _pageLoading.sink;
   Stream<bool> get pageLoadingStream => _pageLoading.stream;
 
+
+  StreamSink<NavView> get navSink => _navController.sink;
+  Stream<NavView> get navStream => _navController.stream;
+
+  NavView view;
+
   AppDataModel() {
     _api = new BtcMarketsApi();
+
+    var navView = NavView();
+    navView.view = View.Home;
+    navView.subView = SubView.None;
+    view = navView;
+  }
+
+  void switchView(NavView nav)
+  {
+    view = nav;
+    navSink.add(nav);
   }
 
   Future refreshMarkets({isPullToRefesh = false}) async {
@@ -109,10 +129,12 @@ class AppDataModel{
     }
   }
 
-  Future<List<MarketHistory>> getMarketHistory(
+  Future<MarketHistory> getMarketHistory(
       MarketData market, String duration) async {
    // pageLoadingSink.add(true);
-    marketHistory.clear();
+
+    marketHistory.duration = duration;
+    marketHistory.market = market;
 
     try {
       TickTime tickTime;
@@ -125,11 +147,11 @@ class AppDataModel{
           break;
         case "6H":
           dateTime = DateTime.now().subtract(new Duration(hours: 6));
-          tickTime = TickTime.minute;
+          tickTime = TickTime.hour;
           break;
         case "12H":
           dateTime = DateTime.now().subtract(new Duration(hours: 12));
-          tickTime = TickTime.minute;
+          tickTime = TickTime.hour;
           break;
         case "1D":
           dateTime = DateTime.now().subtract(new Duration(days: 1));
@@ -137,15 +159,15 @@ class AppDataModel{
           break;
         case "3D":
           dateTime = DateTime.now().subtract(new Duration(days: 3));
-          tickTime = TickTime.hour;
+          tickTime = TickTime.day;
           break;
         case "1W":
           dateTime = DateTime.now().subtract(new Duration(days: 7));
-          tickTime = TickTime.hour;
+          tickTime = TickTime.day;
           break;
         case "2W":
           dateTime = DateTime.now().subtract(new Duration(days: 14));
-          tickTime = TickTime.hour;
+          tickTime = TickTime.day;
           break;
         case "1M":
           dateTime = DateTime.now().subtract(new Duration(days: 30));
@@ -176,16 +198,7 @@ class AppDataModel{
           market.instrument, market.currency, tickTime, dateTime, true);
       if (history.success) {
         var ticks = history.ticks;
-        for (var tick in ticks) {
-          var markHistory = new MarketHistory();
-          markHistory.high = tick.highValue;
-          markHistory.low = tick.lowValue;
-          markHistory.open = tick.openValue;
-          markHistory.close = tick.closeValue;
-          markHistory.volumeto = tick.volumeValue;
-
-          marketHistory.add(markHistory);
-        }
+        marketHistory.refresh(ticks);
       }
     } catch (e) {
       print("Exception in marketHistory **************");
@@ -197,8 +210,10 @@ class AppDataModel{
   }
 
   Future refreshMarketHistory(MarketData market, String duration) async {
-    pageLoadingSink.add(true);
-    marketHistory.clear();
+   // pageLoadingSink.add(true);
+    marketHistorySink.add(null);
+    marketHistory.duration = duration;
+    marketHistory.market = market;
     try {
       TickTime tickTime;
       DateTime dateTime;
@@ -208,13 +223,17 @@ class AppDataModel{
           dateTime = DateTime.now().subtract(new Duration(hours: 1));
           tickTime = TickTime.minute;
           break;
+        case "3H":
+          dateTime = DateTime.now().subtract(new Duration(hours: 3));
+          tickTime = TickTime.hour;
+        break;  
         case "6H":
           dateTime = DateTime.now().subtract(new Duration(hours: 6));
-          tickTime = TickTime.minute;
+          tickTime = TickTime.hour;
           break;
         case "12H":
           dateTime = DateTime.now().subtract(new Duration(hours: 12));
-          tickTime = TickTime.minute;
+          tickTime = TickTime.hour;
           break;
         case "1D":
           dateTime = DateTime.now().subtract(new Duration(days: 1));
@@ -222,15 +241,15 @@ class AppDataModel{
           break;
         case "3D":
           dateTime = DateTime.now().subtract(new Duration(days: 3));
-          tickTime = TickTime.hour;
+          tickTime = TickTime.day;
           break;
         case "1W":
           dateTime = DateTime.now().subtract(new Duration(days: 7));
-          tickTime = TickTime.hour;
+          tickTime = TickTime.day;
           break;
         case "2W":
           dateTime = DateTime.now().subtract(new Duration(days: 14));
-          tickTime = TickTime.hour;
+          tickTime = TickTime.day;
           break;
         case "1M":
           dateTime = DateTime.now().subtract(new Duration(days: 30));
@@ -261,25 +280,16 @@ class AppDataModel{
           market.instrument, market.currency, tickTime, dateTime, true);
       if (history.success) {
         var ticks = history.ticks;
-       // ticks.sort((a, b) => a.dateTime.compareTo(b.dateTime));
-        for (var tick in ticks) {
-          var markHistory = new MarketHistory();
-          markHistory.high = tick.highValue;
-          markHistory.low = tick.lowValue;
-          markHistory.open = tick.openValue;
-          markHistory.close = tick.closeValue;
-          markHistory.volumeto = tick.volumeValue;
-
-          marketHistory.add(markHistory);
-        }
+        marketHistory.refresh(ticks);
       }
+      
     } catch (e) {
       print("Exception in marketHistory **************");
       print(e);
     }
 
     marketHistorySink.add("refresh");
-    pageLoadingSink.add(false);
+  //  pageLoadingSink.add(false);
   }
 
   void updateFavourite(MarketData market, bool add) {
@@ -361,7 +371,7 @@ class AppDataModel{
   }
 
   List<NewsItem> _newsItems;
-  Future<List<NewsItem>> GetNews() async {
+  Future<List<NewsItem>> getNews() async {
     if (_newsItems == null || _newsItems.length<=0) {
         
       if(_newsItems == null)
@@ -383,7 +393,7 @@ class AppDataModel{
 
           var newsItem = new NewsItem();
           newsItem.title = link.text;
-          newsItem.link = link.attributes["href"];
+          newsItem.link = "https://support.btcmarkets.net"+link.attributes["href"];
           _newsItems.add(newsItem);
 
         }
@@ -397,6 +407,7 @@ class AppDataModel{
   void dispose() {
     _marketsRefreshController.close();
     _marketHistoryController.close();
+    _navController.close();
     _pageLoading.close();
   }
 

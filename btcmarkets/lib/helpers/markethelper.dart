@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../constants.dart';
+
 class MarketHelper {
 
   static Map get markets => {
@@ -25,6 +27,21 @@ class MarketHelper {
     String name = markets[code]??"";
     
     return name;
+  }
+
+  static String getValueFormat(String currency, double value)
+  {
+     String valueString = "";
+    if(currency == Constants.AUD)
+    {
+       valueString = Constants.audFormat.format(value).toString();
+    }
+    else
+    if(currency == Constants.BTC)
+    { 
+      valueString = Constants.btcFormat.format(value).toString();
+    }
+    return valueString;
   }
 }
 
