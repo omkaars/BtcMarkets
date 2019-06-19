@@ -37,11 +37,27 @@ class MarketHelper {
        valueString = Constants.audFormat.format(value).toString();
     }
     else
-    if(currency == Constants.BTC)
+    if((currency??"").isNotEmpty)
     { 
       valueString = Constants.btcFormat.format(value).toString();
     }
     return valueString;
   }
+
+  static String getSymbol(String currency)
+  {
+    String symbol = "";
+    if(currency == Constants.AUD)
+    {
+       symbol = "\$";
+    }
+    else
+    if(currency == Constants.BTC)
+    { 
+      symbol = "Ƀ";
+    }
+    return symbol;
+  }
+  
 }
 

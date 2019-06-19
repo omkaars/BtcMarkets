@@ -460,6 +460,101 @@ class HistoricalTicks extends ApiResponse {
   }
 }
 
+
+class OrderData
+{
+  double price;
+  double quantity;
+  double get total => price * quantity;
+
+  OrderData();
+
+  OrderData.fromJson(json)
+  {
+
+     price = json[0];
+     quantity = json[1];
+  }
+  Map<String, dynamic> toJson() {
+    
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data["price"] = this.price;
+    data["quantity"] = this.quantity;
+    data["total"] = this.total;
+    
+    return data;
+  }
+  
+
+}
+class OrderBook extends ApiResponse
+{
+  String currency;
+  String instrument;
+
+  int timestamp;
+  
+  DateTime get datetime => DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
+
+  List<OrderData> asks;
+
+  List<OrderData> bids;
+
+  OrderBook();
+
+  OrderBook.fromJson(Map<String, dynamic> json) {
+    currency = json['currency'];
+    instrument = json['instrument'];
+    timestamp = json['timestamp'];
+   
+    if(asks == null)
+    {
+      asks = new List<OrderData>();
+    }
+
+    if(bids == null)
+    {
+      bids = new List<OrderData>();
+    }
+    
+    for(var ask in json['asks'])
+    {
+      var data = OrderData.fromJson(ask);
+      asks.add(data);
+    } 
+
+    for(var bid in json['bids'])
+    {
+      var data = OrderData.fromJson(bid);
+      bids.add(data);
+    } 
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data["currency"] = this.currency;
+    data["instrument"] = this.instrument;
+    data["timestamp"] = this.timestamp;
+    data["datetime"] = this.datetime;
+   
+    var askArr = [];
+    asks.forEach((f){
+      askArr.add(f.toJson());
+    });
+    var askStr = askArr.join(",");
+    data["asks"] = "[$askStr]";
+
+    var bidArr = [];
+    bids.forEach((f){
+      bidArr.add(f.toJson());
+    });
+    var bidStr = bidArr.join(",");
+    data["bids"] = "[$bidStr]";
+    
+    return data;
+  }
+}
+
 class BtcMarketsApi {
   static final BtcMarketsApi _api = new BtcMarketsApi._internal();
 
@@ -653,6 +748,26 @@ Future<HistoricalTicks> getHistoricalTicks(String instrument, String currency, T
     }
 
     return ticks;
+  }
+
+  Future<OrderBook> getOrderBook(String instrument, String currency) async
+  {
+      OrderBook book = new OrderBook();
+
+      try {
+      var response = await _dio.get("$_baseUrl/market/$instrument/$currency/orderbook");
+      
+      var obj = OrderBook.fromJson(response.data);
+      
+      if (obj != null) {
+        book = obj;
+        book.success = true;
+      }
+    } catch (e) {
+      book.success = false;
+      book.errorMessage = e.toString();
+    }
+      return book;
   }
 
   /*

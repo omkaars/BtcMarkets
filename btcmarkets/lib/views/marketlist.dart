@@ -184,7 +184,29 @@ class _MarketListState extends State<MarketList> with AutomaticKeepAliveClientMi
                 displacement: 100,
 
                 onRefresh: ()=> _onRefresh(),
-                child: listView,
+                child: Container(
+                    child: Column(children: <Widget>[
+                      Container(
+                        color: Theme.of(context).accentColor,
+                        padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
+                        child:Row(
+                                        children:<Widget>[
+                                          Expanded(flex:7, child:Text("Coin")),
+                                          Expanded(flex:5, child:Text("Price")),
+                                         Expanded(flex:4, child:Text("Holdings")),
+                                        ]
+                                      )
+                      ),
+
+                      Expanded(flex:8,
+                      
+                      child: listView,)
+
+                    ],)
+                  
+                  ,) 
+                
+                
                 
             );
   }

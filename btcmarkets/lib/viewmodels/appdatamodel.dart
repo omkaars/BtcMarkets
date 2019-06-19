@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:btcmarkets/helpers/markethelper.dart';
 import 'package:btcmarkets/models/markethistory.dart';
 import 'package:btcmarkets/models/marketsgroup.dart';
+import 'package:btcmarkets/models/markettrades.dart';
 import 'package:btcmarkets/models/navview.dart';
 import 'package:btcmarkets/models/newsitem.dart';
 import 'package:dio/dio.dart';
@@ -19,6 +20,9 @@ class AppDataModel{
   final List<MarketData> markets = new List<MarketData>();
 
   final MarketHistory marketHistory = new MarketHistory();
+
+  MarketTrades  _marketTrades = new MarketTrades();
+  MarketTrades get marketTrades => _marketTrades;
 
   List<MarketData> get audMarkets =>
       markets.where((m) => m.currency == Constants.AUD).toList();
@@ -44,6 +48,9 @@ class AppDataModel{
   final StreamController<String> _marketHistoryController =
       StreamController<String>.broadcast();
 
+  final StreamController<String> _tradesRefreshController =
+      StreamController<String>.broadcast();
+
   final StreamController<NavView> _navController = StreamController<NavView>.broadcast();
 
   StreamSink<String> get marketsRefreshSink => _marketsRefreshController.sink;
@@ -55,9 +62,11 @@ class AppDataModel{
   StreamSink<bool> get pageLoadingSink => _pageLoading.sink;
   Stream<bool> get pageLoadingStream => _pageLoading.stream;
 
-
   StreamSink<NavView> get navSink => _navController.sink;
   Stream<NavView> get navStream => _navController.stream;
+
+  StreamSink<String> get tradesRefreshSink => _tradesRefreshController.sink;
+  Stream<String> get tradesRefreshStream => _tradesRefreshController.stream;
 
   NavView view;
 
@@ -127,6 +136,39 @@ class AppDataModel{
       isLoading = false;
       pageLoadingSink.add(false);
     }
+  }
+
+Future<MarketTrades> getTrades(String instrument, String currency) async
+{
+  await refreshTrades(instrument, currency);
+  return _marketTrades;
+}
+
+Future refreshTrades(String instrument, String currency,{isPullToRefesh = false}) async {
+    debugPrint('Refreshing trades');
+
+    // if (!isPullToRefesh) {
+    //   isLoading = true;
+    //   pageLoadingSink.add(true);
+    // }
+    print("Calling refreshTrades");
+    try {
+      var data = await _api.getOrderBook(instrument, currency);
+      _marketTrades = MarketTrades.fromBook(data);
+      print("Got trades ${_marketTrades.asks.length} ");
+    } catch (e) {
+      print(e);
+      _marketTrades = new MarketTrades();
+    }
+
+    tradesRefreshSink.add("Refresh");
+
+    // markets.sort((a,b)=> a.groupId.compareTo(b.groupId));
+
+    // if (!isPullToRefesh) {
+    //   isLoading = false;
+    //   pageLoadingSink.add(false);
+    // }
   }
 
   Future<MarketHistory> getMarketHistory(
@@ -407,6 +449,7 @@ class AppDataModel{
   void dispose() {
     _marketsRefreshController.close();
     _marketHistoryController.close();
+    _tradesRefreshController.close();
     _navController.close();
     _pageLoading.close();
   }

@@ -31,6 +31,19 @@ class AppData {
     _markets = await getMarkets();
   }
 
+void getOrderBook(String instrument, String currency) async
+  {
+    try{
+
+      var data = await _api.getOrderBook(instrument, currency);
+
+      print(data.toJson());
+    }
+    catch(e)
+    {
+      print(e);
+    }
+  }
   void getHistoricalTicks() async
   {
     try{
@@ -100,7 +113,7 @@ void main() async {
   var secret =
       "zE4rPkfizqOYQvbYQhOths6KiS2SyBKI3zRbdbu5qM1ha4VgPu4Om/9zaUAuFm80zGCiVSbSD0NK/ar3BWzpJg==";
   appData.updateCredentials(apiKey, secret);
-  appData.getHistoricalTicks();
+  appData.getOrderBook("BTC","AUD");
 
   // // var balances = await appData.api.getAccountBalance();
   // // print(json.encode(balances));
