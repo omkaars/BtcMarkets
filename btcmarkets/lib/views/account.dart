@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'apppopupmenu.dart';
 import 'navdrawar.dart';
 
 
@@ -14,6 +15,7 @@ class AccountView extends StatefulWidget {
 class _AccountViewState extends State<AccountView> {
 
   NavDrawer _navDrawer =  new NavDrawer();
+  AppPopupMenu _popupMenu = new AppPopupMenu();
   int _selectedIndex = 0;
 
   _AccountViewState();
@@ -28,6 +30,7 @@ class _AccountViewState extends State<AccountView> {
            drawer: _navDrawer,
            appBar:  new AppBar(
              title: Text("Account"),
+             actions: <Widget>[_popupMenu],
             bottom: TabBar(
                isScrollable: true,
                

@@ -5,6 +5,7 @@ import 'package:btcmarkets/models/marketsgroup.dart';
 import 'package:btcmarkets/models/markettrades.dart';
 import 'package:btcmarkets/models/navview.dart';
 import 'package:btcmarkets/models/newsitem.dart';
+import 'package:btcmarkets/models/settings.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:html/parser.dart' show parse;
@@ -18,6 +19,9 @@ class AppDataModel{
   BtcMarketsApi _api;
 
   final List<MarketData> markets = new List<MarketData>();
+
+  final Settings settings = new Settings();
+
 
   final MarketHistory marketHistory = new MarketHistory();
 
@@ -51,6 +55,8 @@ class AppDataModel{
   final StreamController<String> _tradesRefreshController =
       StreamController<String>.broadcast();
 
+  final StreamController<String> _settingsController = StreamController<String>.broadcast();
+
   final StreamController<NavView> _navController = StreamController<NavView>.broadcast();
 
   StreamSink<String> get marketsRefreshSink => _marketsRefreshController.sink;
@@ -67,6 +73,9 @@ class AppDataModel{
 
   StreamSink<String> get tradesRefreshSink => _tradesRefreshController.sink;
   Stream<String> get tradesRefreshStream => _tradesRefreshController.stream;
+
+  StreamSink<String> get settingsSink => _settingsController.sink;
+  Stream<String> get settingsStream => _settingsController.stream;
 
   NavView view;
 
@@ -85,6 +94,11 @@ class AppDataModel{
     navSink.add(nav);
   }
 
+  void switchTheme(String theme)
+  {
+    settings.theme = theme;
+    settingsSink.add("themeChanged");
+  }
   Future refreshMarkets({isPullToRefesh = false}) async {
     debugPrint('Refreshing');
 
@@ -450,6 +464,7 @@ Future refreshTrades(String instrument, String currency,{isPullToRefesh = false}
     _marketsRefreshController.close();
     _marketHistoryController.close();
     _tradesRefreshController.close();
+    _settingsController.close();
     _navController.close();
     _pageLoading.close();
   }

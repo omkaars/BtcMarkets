@@ -2,6 +2,7 @@ import 'package:btcmarkets/models/navview.dart';
 import 'package:btcmarkets/providers/appdataprovider.dart';
 import 'package:flutter/material.dart';
 import '../constants.dart';
+import 'apppopupmenu.dart';
 import 'navdrawar.dart';
 import 'marketlist.dart';
 
@@ -14,7 +15,7 @@ class MarketsView extends StatefulWidget {
 
 class _MarketsViewState extends State<MarketsView> {
   NavDrawer _navDrawer = new NavDrawer();
-
+ AppPopupMenu _popupMenu = new AppPopupMenu();
   int _selectedIndex = 0;
 
 
@@ -64,6 +65,9 @@ class _MarketsViewState extends State<MarketsView> {
                 Tab(text: "BTC Markets"),
               ],
             ),
+             actions: <Widget>[
+           _popupMenu
+          ],
           ),
           body: TabBarView(
             children: <Widget>[

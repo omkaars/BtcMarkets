@@ -224,7 +224,7 @@ class _MarketDetailState extends State<MarketDetailView> {
                   ),
                 ),
 
-                SizedBox(height: 10),
+                SizedBox(height: 20),
 
 
                 //Charting
@@ -265,8 +265,10 @@ class _MarketDetailState extends State<MarketDetailView> {
                       ),
                       ),
                       SizedBox(height: 20),
+                      AspectRatio(aspectRatio: 3/2,
+                      child:
                       Container(
-                          height: 250,
+                          
                           child: StreamBuilder(
                             stream: model.marketHistoryStream,
                             builder: (BuildContext buildContext,
@@ -290,10 +292,13 @@ class _MarketDetailState extends State<MarketDetailView> {
                                 child: CircularProgressIndicator(),
                               );
                             },
-                          ))
+                          )
+                          )
+                          )
                     ],
                   ),
                 )
+                
               ],
             ),
           ),

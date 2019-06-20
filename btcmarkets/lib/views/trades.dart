@@ -1,6 +1,7 @@
 import 'package:btcmarkets/models/markettrades.dart';
 import 'package:btcmarkets/providers/appdataprovider.dart';
 import 'package:flutter/material.dart';
+import 'apppopupmenu.dart';
 import 'navdrawar.dart';
 
 class TradesView extends StatefulWidget {
@@ -14,7 +15,7 @@ class TradesView extends StatefulWidget {
 
 class _TradesViewState extends State<TradesView> {
   NavDrawer _navDrawer = new NavDrawer();
-
+  AppPopupMenu _popupMenu = new AppPopupMenu();
   _TradesViewState();
 
   bool _isFirst = true;
@@ -26,7 +27,10 @@ class _TradesViewState extends State<TradesView> {
 
     return new Scaffold(
         drawer: _navDrawer,
-        appBar: new AppBar(title: Text("Trades")),
+        appBar: new AppBar(
+          title: Text("Trades"),
+          actions: <Widget>[_popupMenu],
+        ),
         body: getTradesView());
   }
 
@@ -71,15 +75,16 @@ class _TradesViewState extends State<TradesView> {
       },
     );
   }
-  Widget getOrderHeader()
-  {
+
+  Widget getOrderHeader() {
     return Container(
         color: Theme.of(context).accentColor,
         padding: EdgeInsets.all(5),
         child: Row(children: <Widget>[
           Expanded(
             flex: 3,
-            child: Align(alignment: Alignment.centerRight, child: Text("Price")),
+            child:
+                Align(alignment: Alignment.centerRight, child: Text("Price")),
           ),
           Expanded(
             flex: 4,
@@ -92,17 +97,16 @@ class _TradesViewState extends State<TradesView> {
                   Align(alignment: Alignment.centerRight, child: Text("Total")))
         ]));
   }
+
   Widget getOrdersView(List<MarketOrderData> orders, bool isSell) {
     var textStyle = TextStyle(
       color: Theme.of(context).hintColor,
     );
 
+    var color = isSell ? Colors.red : Colors.green;
 
-    var color = isSell?Colors.red:Colors.green;
-          
     var orderStyle = TextStyle(color: color);
-  
-    
+
     var details = Expanded(
         flex: 8,
         child: ListView.separated(
@@ -157,28 +161,24 @@ class _TradesViewState extends State<TradesView> {
           },
         ));
 
-
-      return Container(
-          child: Row(
+    return Container(
+        child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-            
-            Container(
+          Container(
               padding: EdgeInsets.all(2),
-              color:color,
-              
-              child:
-              Align(alignment: Alignment.center,
-              child:RotatedBox(quarterTurns: 3,child: Text(isSell?"Sell":"Buy"),)
-              )
-            ),
-            Expanded(flex:9,child:
-            Column(
-              children: <Widget>[details],
-              )
-              )
-          ]
-      ));
-    
+              color: color,
+              child: Align(
+                  alignment: Alignment.center,
+                  child: RotatedBox(
+                    quarterTurns: 3,
+                    child: Text(isSell ? "Sell" : "Buy"),
+                  ))),
+          Expanded(
+              flex: 9,
+              child: Column(
+                children: <Widget>[details],
+              ))
+        ]));
   }
 }

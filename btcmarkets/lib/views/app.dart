@@ -1,8 +1,13 @@
+import 'dart:async';
+
 import 'package:btcmarkets/models/navview.dart';
+import 'package:btcmarkets/views/settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/semantics.dart';
 import '../helpers/uihelpers.dart';
 
+import 'about.dart';
 import 'home.dart';
 import 'markets.dart';
 import 'more.dart';
@@ -19,8 +24,15 @@ class CustomPopupMenu {
   IconData icon;
 }
 
-class BtcMarketsApp extends StatelessWidget {
+class BtcMarketsApp extends StatefulWidget {
   BtcMarketsApp();
+
+  @override
+  _BtcMarketsAppState createState() => _BtcMarketsAppState();
+}
+
+class _BtcMarketsAppState extends State<BtcMarketsApp> {
+  _BtcMarketsAppState();
 
   static Color primaryColor = HexColor("#3C6B3C");
   static Color accentColor = HexColor("#ff9933");
@@ -35,19 +47,36 @@ class BtcMarketsApp extends StatelessWidget {
     indicatorColor: accentColor,
   );
 
+  ThemeData _theme;
+  AppDataModel _model;
+  
   @override
   Widget build(BuildContext context) {
+    if(_model == null)
+    {
+      _model = AppDataModel();
+    }
     return AppDataProvider(
-        model: AppDataModel(),
-        child: MaterialApp(
-          title: 'BTC Markets',
-          theme: darkTheme,
-          home: BottomMenuController(),
-          routes: <String, WidgetBuilder>{
-//            "/settings": (BuildContext context) => new SettingsView()
+        model: _model,
+        child: StreamBuilder(
+          stream: _model.settingsStream,
+          builder: (BuildContext buildContext, AsyncSnapshot<String> snapshot) {
+            switch (_model.settings.theme) {
+              case "Light":
+                _theme = lightTheme;
+                break;
+              default:
+                _theme = darkTheme;
+                break;
+            }
+            return MaterialApp(
+                title: 'BTC Markets',
+                theme: _theme,
+                home: BottomMenuController(),
+                routes: <String, WidgetBuilder>{}
+                
+                );
           },
-
-          //onGenerateRoute: router.generator,
         ));
   }
 }
@@ -69,7 +98,7 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
   final PageStorageBucket bucket = PageStorageBucket();
 
   int _selectedIndex = 0;
-
+  StreamSubscription<NavView> _navViewStream;
   Widget _bottomNavigationBar(int selectedIndex) => BottomNavigationBar(
         onTap: (int index) => setState(() => _selectedIndex = index),
         currentIndex: selectedIndex,
@@ -99,25 +128,21 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
         selectedItemColor: Theme.of(context).accentColor,
       );
 
-  bool _isFirstTime = true;
   void _initListeners() {
-
     var model = AppDataProvider.of(context).model;
     model.pageLoadingStream.listen((loading) {
       setState(() {
         _loading = loading;
       });
     });
-    if(!_isFirstTime)
-      return;
-      
 
-    _isFirstTime = false;
-    model.navStream.listen((nav) {
-    
+    if (_navViewStream != null) {
+      _navViewStream.cancel();
+    }
+    _navViewStream = model.navStream.listen((nav) {
       setState(() {
-         var model = AppDataProvider.of(context).model;
-         
+        var model = AppDataProvider.of(context).model;
+        print("******** ${model.view.view}");
         switch (model.view.view) {
           case View.Home:
             _selectedIndex = 0;
@@ -134,9 +159,22 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
           case View.News:
             _selectedIndex = 4;
             break;
-          default:
-          _selectedIndex = 0;
+          case View.Settings:
+         
+            Navigator.push(context,
+                MaterialPageRoute(builder: (BuildContext buildContext) {
+              return SettingsView();
+            }));
+            break;
+          case View.About:
+  Navigator.push(context,
+                MaterialPageRoute(builder: (BuildContext buildContext) {
+              return AboutView();
+            }));
           break;
+          default:
+            _selectedIndex = 0;
+            break;
         }
       });
     });
@@ -160,5 +198,14 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
         ),
       ),
     ]);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    var model = AppDataProvider.of(context).model;
+    if (_navViewStream != null) {
+      _navViewStream.cancel();
+    }
   }
 }

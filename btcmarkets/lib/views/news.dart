@@ -2,6 +2,7 @@ import 'package:btcmarkets/models/newsitem.dart';
 import 'package:btcmarkets/providers/appdataprovider.dart';
 import 'package:btcmarkets/views/marketwebview.dart';
 import 'package:flutter/material.dart';
+import 'apppopupmenu.dart';
 import 'navdrawar.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -16,7 +17,7 @@ class NewsView extends StatefulWidget {
 
 class _NewsViewState extends State<NewsView> {
   NavDrawer _navDrawer = new NavDrawer();
-
+AppPopupMenu _popupMenu = new AppPopupMenu();
   _NewsViewState();
 
   @override
@@ -25,7 +26,7 @@ class _NewsViewState extends State<NewsView> {
 
     return new Scaffold(
         drawer: _navDrawer,
-        appBar: new AppBar(title: Text("News")),
+        appBar: new AppBar(title: Text("News"),actions: <Widget>[_popupMenu],),
         body: new FutureBuilder(
             future: model.getNews(),
             builder: (BuildContext buildContext,
