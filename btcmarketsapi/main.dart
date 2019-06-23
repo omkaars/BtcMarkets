@@ -171,9 +171,9 @@ print(json.encode(fundHistory));
 }
 void testSockets() {
 
-  var apiKey = "ac400ad8-6051-4dc9-aaf3-2dd3f8a4c0d6";
+  var apiKey = "";
   var apiSecret =
-      "zE4rPkfizqOYQvbYQhOths6KiS2SyBKI3zRbdbu5qM1ha4VgPu4Om/9zaUAuFm80zGCiVSbSD0NK/ar3BWzpJg==";
+      "";
 
   BtcMarketSocketsV2 socket = new BtcMarketSocketsV2();
 
