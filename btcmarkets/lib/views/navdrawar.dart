@@ -12,7 +12,7 @@ class NavDrawer extends StatefulWidget {
 
 //ListTile.divideTiles(
 class _NavDrawerState extends State<NavDrawer> {
-  final bool hasValidAccount = false;
+  bool _hasValidAccount;
   bool _totalInBtc = false;
   void _onSelectMenu(View view, SubView subView) {
     var nav = new NavView();
@@ -26,6 +26,8 @@ class _NavDrawerState extends State<NavDrawer> {
 
   @override
   Widget build(BuildContext context) {
+     var model = AppDataProvider.of(context).model;
+    _hasValidAccount = model.isValidAccount;
     return new Drawer(
         child: new ListView(
       padding: EdgeInsets.zero,
@@ -94,28 +96,28 @@ class _NavDrawerState extends State<NavDrawer> {
             ListTile(
                 leading: Icon(Icons.attach_money),
                 title: Text('Balances'),
-                enabled: hasValidAccount,
+                enabled: _hasValidAccount,
                 onTap: () =>
                     _onSelectMenu(View.Account, SubView.AccountBalances)),
             new Divider(height: 1),
             ListTile(
                 leading: Icon(Icons.format_list_bulleted),
                 title: Text('Open Orders'),
-                enabled: hasValidAccount,
+                enabled: _hasValidAccount,
                 onTap: () =>
                     _onSelectMenu(View.Account, SubView.AccountOpenOrders)),
             new Divider(height: 1),
             ListTile(
                 leading: Icon(Icons.view_list),
                 title: Text('Orders History'),
-                enabled: hasValidAccount,
+                enabled: _hasValidAccount,
                 onTap: () =>
                     _onSelectMenu(View.Account, SubView.AccountOrderHistory)),
             new Divider(height: 1),
             ListTile(
                 leading: Icon(Icons.monetization_on),
                 title: Text('Funds History'),
-                enabled: hasValidAccount,
+                enabled: _hasValidAccount,
                 onTap: () =>
                     _onSelectMenu(View.Account, SubView.AccountFundHistory)),
             new Divider(height: 1),

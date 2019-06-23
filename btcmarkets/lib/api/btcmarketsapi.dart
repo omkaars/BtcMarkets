@@ -484,7 +484,7 @@ class Orders {
 }
 class OrderHistory {
   bool success;
-  String errorCode;
+  int errorCode;
   String errorMessage;
   List<Orders> orders;
   Paging paging;
@@ -528,7 +528,7 @@ class OrderHistory {
 
 class TradeHistory {
   bool success;
-  String errorCode;
+  int errorCode;
   String errorMessage;
   List<Trades> trades;
   Paging paging;
@@ -571,21 +571,26 @@ class TradeHistory {
 
 class OpenOrders {
   bool success;
-  String errorCode;
+  int errorCode;
   String errorMessage;
   List<Orders> orders;
 
   OpenOrders({this.success, this.errorCode, this.errorMessage, this.orders});
 
   OpenOrders.fromJson(Map<String, dynamic> json) {
+
     success = json['success'];
     errorCode = json['errorCode'];
     errorMessage = json['errorMessage'];
+  
+    if(success)
+    {
     if (json['orders'] != null) {
       orders = new List<Orders>();
       json['orders'].forEach((v) {
         orders.add(new Orders.fromJson(v));
       });
+    }
     }
   }
 
@@ -603,7 +608,7 @@ class OpenOrders {
 
 class FundTransferHistory {
   bool success;
-  String errorCode;
+  int errorCode;
   String errorMessage;
   List<FundTransfer> fundTransfers;
 
@@ -696,7 +701,7 @@ class FundTransfer {
 }
 class CryptoAddress {
   bool success;
-  String errorCode;
+  int errorCode;
   String errorMessage;
   String address;
   String currency;
@@ -728,7 +733,7 @@ class CryptoAddress {
 }
 class WithdrawalFee {
   bool success;
-  String errorCode;
+  int errorCode;
   String errorMessage;
   int fee;
   String currency;
@@ -1267,7 +1272,7 @@ Future<HistoricalTicks> getHistoricalTicks(String instrument, String currency, T
         url = url +"?${params.toString()}";
       }
       var response = await _dio.get(url);
-      print(response.data);
+      
       var obj = OrderHistory.fromJson(response.data);
       if (obj != null) {
         history = obj;
@@ -1293,7 +1298,7 @@ Future<HistoricalTicks> getHistoricalTicks(String instrument, String currency, T
       
     
       var response = await _dio.get(url);
-      print(response.data);
+      
       var obj = TradeHistory.fromJson(response.data);
       if (obj != null) {
         history = obj;
@@ -1337,6 +1342,7 @@ Future<HistoricalTicks> getHistoricalTicks(String instrument, String currency, T
         history = obj;
       }
     } catch (e) {
+
       print(e);
       history.success = false;
       history.errorMessage = e.toString();

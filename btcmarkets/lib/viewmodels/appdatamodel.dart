@@ -51,6 +51,9 @@ class AppDataModel {
   final StreamController<bool> _pageLoading =
       StreamController<bool>.broadcast();
 
+  final StreamController<String> _errorNotifier =
+      StreamController<String>.broadcast();
+
   final StreamController<String> _marketsRefreshController =
       StreamController<String>.broadcast();
 
@@ -75,6 +78,9 @@ class AppDataModel {
   StreamSink<bool> get pageLoadingSink => _pageLoading.sink;
   Stream<bool> get pageLoadingStream => _pageLoading.stream;
 
+  StreamSink<String> get errorNotifierSink => _errorNotifier.sink;
+  Stream<String> get errorNotifierStream => _errorNotifier.stream;
+
   StreamSink<NavView> get navSink => _navController.sink;
   Stream<NavView> get navStream => _navController.stream;
 
@@ -95,9 +101,15 @@ class AppDataModel {
     view = navView;
 
     settings.apiKey = "";
-    settings.secret =
-        "";
+    settings.secret = "";
     _api.updateCredentials(settings.apiKey, settings.secret);
+  }
+
+  bool get isValidAccount {
+    return settings.apiKey != null &&
+        settings.apiKey.isNotEmpty &&
+        settings.secret != null &&
+        settings.secret.isNotEmpty;
   }
 
   void switchView(NavView nav) {
@@ -130,12 +142,18 @@ class AppDataModel {
           }
         }
       }
-      var data = await _api.getMarkets(activeMarkets: activeMarkets);
+        markets.clear();
 
+        
+      var data = await _api.getMarkets(activeMarkets: activeMarkets);
+  
       try {
         await refreshBalances();
-      } catch (e) {}
-      markets.clear();
+      } catch (e) {
+
+        
+      }
+    
 
       for (Market market in data.markets) {
         MarketData marketData = MarketData();
@@ -175,7 +193,10 @@ class AppDataModel {
         } catch (e) {}
         markets.add(marketData);
       }
-    } catch (e) {}
+    } catch (e) {
+
+      _showError(null);
+    }
 
     marketsRefreshSink.add("Refresh");
 
@@ -237,59 +258,63 @@ class AppDataModel {
   }
 
   Future refreshBalances() async {
-    print("reloading balances...");
+    try {
+      var accountData = await _api.getAccountBalances();
 
-    var accountData = await _api.getAccountBalances();
+      if (accountData.success) {
+        balances.clear();
+        var walletBal = accountData.balances;
 
-    if (accountData.success) {
-      balances.clear();
-      var walletBal = accountData.balances;
+        if (walletBal != null && walletBal.isNotEmpty) {
+          var audBal = walletBal.firstWhere((b) => b.currency == Constants.AUD);
 
-      if (walletBal != null && walletBal.isNotEmpty) {
-        var audBal = walletBal.firstWhere((b) => b.currency == Constants.AUD);
-
-        var audName = MarketHelper.getMarketName(Constants.AUD.toLowerCase());
-        if (audBal != null) {
-          balances.add(WalletCurrency(
-              name: audName,
-              currency: audBal.currency,
-              balance: audBal.balanceValue,
-              pending: audBal.pendingFundsValue));
-        } else {
-          balances.add(WalletCurrency(
-              currency: Constants.AUD, balance: 0.0, pending: 0.0));
-        }
-        var btcBal = walletBal.firstWhere((b) => b.currency == Constants.BTC);
-        var btcName = MarketHelper.getMarketName(Constants.BTC.toLowerCase());
-        if (btcBal != null) {
-          balances.add(WalletCurrency(
-              name: btcName,
-              currency: btcBal.currency,
-              balance: btcBal.balanceValue,
-              pending: btcBal.pendingFundsValue));
-        } else {
-          balances.add(WalletCurrency(
-              currency: Constants.BTC, balance: 0.0, pending: 0.0));
-        }
-        walletBal.sort((a, b) => a.currency.compareTo(b.currency));
-
-        walletBal.forEach((bal) {
-          var isMarketExist =
-              activeMarkets.any((m) => m.instrument == bal.currency);
-
-          if (bal.currency != Constants.AUD &&
-              bal.currency != Constants.BTC &&
-              isMarketExist) {
-            var walletBal = WalletCurrency(
-                name: MarketHelper.getMarketName(bal.currency.toLowerCase()),
-                currency: bal.currency,
-                balance: bal.balanceValue,
-                pending: bal.pendingFundsValue);
-
-            balances.add(walletBal);
+          var audName = MarketHelper.getMarketName(Constants.AUD.toLowerCase());
+          if (audBal != null) {
+            balances.add(WalletCurrency(
+                name: audName,
+                currency: audBal.currency,
+                balance: audBal.balanceValue,
+                pending: audBal.pendingFundsValue));
+          } else {
+            balances.add(WalletCurrency(
+                currency: Constants.AUD, balance: 0.0, pending: 0.0));
           }
-        });
+          var btcBal = walletBal.firstWhere((b) => b.currency == Constants.BTC);
+          var btcName = MarketHelper.getMarketName(Constants.BTC.toLowerCase());
+          if (btcBal != null) {
+            balances.add(WalletCurrency(
+                name: btcName,
+                currency: btcBal.currency,
+                balance: btcBal.balanceValue,
+                pending: btcBal.pendingFundsValue));
+          } else {
+            balances.add(WalletCurrency(
+                currency: Constants.BTC, balance: 0.0, pending: 0.0));
+          }
+          walletBal.sort((a, b) => a.currency.compareTo(b.currency));
+
+          walletBal.forEach((bal) {
+            var isMarketExist =
+                activeMarkets.any((m) => m.instrument == bal.currency);
+
+            if (bal.currency != Constants.AUD &&
+                bal.currency != Constants.BTC &&
+                isMarketExist) {
+              var walletBal = WalletCurrency(
+                  name: MarketHelper.getMarketName(bal.currency.toLowerCase()),
+                  currency: bal.currency,
+                  balance: bal.balanceValue,
+                  pending: bal.pendingFundsValue);
+
+              balances.add(walletBal);
+            }
+          });
+        }
+      } else {
+        _showError(accountData.errorMessage);
       }
+    } catch (e) {
+      _showError(null);
     }
   }
 
@@ -310,15 +335,14 @@ class AppDataModel {
   }
 
   Future<List<WalletOrder>> getOpenOrders() async {
-    print("Retrieving open orders ********");
     var openOrders = new List<WalletOrder>();
+
     try {
       var response = await _api.getOpenOrders();
+
       if (response.success) {
         var orders = response.orders;
-        orders.forEach((order) 
-        {
-         
+        orders.forEach((order) {
           var walletOrder = new WalletOrder();
           walletOrder.id = order.id;
           walletOrder.instrument = order.instrument;
@@ -330,31 +354,31 @@ class AppDataModel {
           walletOrder.timestamp = order.creationTime;
           walletOrder.status = order.status;
           openOrders.add(walletOrder);
-
         });
+      } else {
+        _showError(response.errorMessage);
       }
-    } catch (e) {}
+    } catch (e) {
+      _showError(null);
+    }
 
     return openOrders;
   }
 
   Future<List<WalletOrder>> getOrderHistory(MarketData market) async {
-    print("Retrieving order history ********");
-    if(market == null)
-    {
+    if (market == null) {
       market = markets[0];
     }
     var openOrders = new List<WalletOrder>();
 
     try {
-      var response = await _api.getOrderHistory(market.instrument, market.currency);
+      var response =
+          await _api.getOrderHistory(market.instrument, market.currency);
 
       if (response.success) {
-
         var orders = response.orders;
 
         orders.forEach((order) {
-
           var walletOrder = new WalletOrder();
 
           walletOrder.id = order.id;
@@ -367,11 +391,10 @@ class AppDataModel {
           walletOrder.timestamp = order.creationTime;
           walletOrder.status = order.status;
 
-          if(order.trades != null)
-          {
+          if (order.trades != null) {
             var trades = new List<WalletTrade>();
 
-            order.trades.forEach((trade){
+            order.trades.forEach((trade) {
               var t = WalletTrade();
               t.timestamp = trade.creationTime;
               t.price = trade.priceValue;
@@ -382,16 +405,18 @@ class AppDataModel {
             walletOrder.trades = trades;
           }
           openOrders.add(walletOrder);
-
         });
+      } else {
+        _showError(response.errorMessage);
       }
-    } catch (e) {}
+    } catch (e) {
+      _showError(null);
+    }
 
     return openOrders;
   }
 
   Future<List<WalletFundTransfer>> getFundsHistory() async {
-    print("Retrieving fund transfers ********");
     var fundTransfers = new List<WalletFundTransfer>();
     try {
       var response = await _api.getFundTransferHistory();
@@ -416,9 +441,11 @@ class AppDataModel {
           fundTransfer.status = transfer.status;
           fundTransfers.add(fundTransfer);
         });
+      } else {
+        _showError(response.errorMessage);
       }
     } catch (e) {
-      print(e);
+      _showError(null);
     }
 
     return fundTransfers;
@@ -426,19 +453,28 @@ class AppDataModel {
 
   Future refreshTrades(String instrument, String currency,
       {isPullToRefesh = false}) async {
-    debugPrint('Refreshing trades');
-
-    print("Calling refreshTrades");
     try {
       var data = await _api.getOrderBook(instrument, currency);
-      _marketTrades = MarketTrades.fromBook(data);
-      print("Got trades ${_marketTrades.asks.length} ");
+      if (data.success) {
+        _marketTrades = MarketTrades.fromBook(data);
+      } else {
+        _showError(data.errorMessage);
+      }
     } catch (e) {
-      print(e);
+      _showError(null);
+
       _marketTrades = new MarketTrades();
     }
 
     tradesRefreshSink.add("Refresh");
+  }
+
+  void _showError(String error) {
+    if (error == null || error.indexOf("Authentication") < 0) {
+      error = "Something went wrong.";
+    }
+
+    errorNotifierSink.add(error);
   }
 
   Future<MarketHistory> getMarketHistory(
@@ -710,5 +746,6 @@ class AppDataModel {
     _settingsController.close();
     _navController.close();
     _pageLoading.close();
+    _errorNotifier.close();
   }
 }

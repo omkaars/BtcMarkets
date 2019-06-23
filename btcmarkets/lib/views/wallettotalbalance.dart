@@ -25,6 +25,8 @@ class _WalletTotalBalanceViewState extends State<WalletTotalBalanceView>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+    
     var model = AppDataProvider.of(context).model;
   
     var bigStyle = Theme.of(context).textTheme.headline;

@@ -49,11 +49,10 @@ class _BtcMarketsAppState extends State<BtcMarketsApp> {
 
   ThemeData _theme;
   AppDataModel _model;
-  
+
   @override
   Widget build(BuildContext context) {
-    if(_model == null)
-    {
+    if (_model == null) {
       _model = AppDataModel();
     }
     return AppDataProvider(
@@ -73,9 +72,7 @@ class _BtcMarketsAppState extends State<BtcMarketsApp> {
                 title: 'BTC Markets',
                 theme: _theme,
                 home: BottomMenuController(),
-                routes: <String, WidgetBuilder>{}
-                
-                );
+                routes: <String, WidgetBuilder>{});
           },
         ));
   }
@@ -100,7 +97,25 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
   int _selectedIndex = 0;
   StreamSubscription<NavView> _navViewStream;
   Widget _bottomNavigationBar(int selectedIndex) => BottomNavigationBar(
-        onTap: (int index) => setState(() => _selectedIndex = index),
+        onTap: (int index) => setState(() {
+              var model = AppDataProvider.of(context).model;
+
+              if (index == 3) {
+                if (!model.isValidAccount) {
+                  
+              
+                  _selectedIndex = 0;
+                  Scaffold.of(_scaffold).showSnackBar(SnackBar(backgroundColor: Colors.red,
+                    content: Text(
+                        "Account feature not available. You must setup valid apikey and secret in settings."),
+                    duration: Duration(seconds: 3),
+                  ));
+                  return;
+                }
+              }
+              
+              _selectedIndex = index;
+            }),
         currentIndex: selectedIndex,
         type: BottomNavigationBarType.fixed,
         items: const <BottomNavigationBarItem>[
@@ -128,12 +143,30 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
         selectedItemColor: Theme.of(context).accentColor,
       );
 
+  StreamSubscription _pageLoadingSub, _errorSub;
+
   void _initListeners() {
     var model = AppDataProvider.of(context).model;
-    model.pageLoadingStream.listen((loading) {
+
+    if (_pageLoadingSub != null) {
+      _pageLoadingSub.cancel();
+    }
+    _pageLoadingSub = model.pageLoadingStream.listen((loading) {
       setState(() {
         _loading = loading;
       });
+    });
+
+    if (_errorSub != null) {
+      _errorSub.cancel();
+    }
+    _errorSub = model.errorNotifierStream.listen((error) {
+      if (_scaffold != null) {
+        Scaffold.of(_scaffold).showSnackBar(SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(error),
+            duration: Duration(seconds: 3)));
+      }
     });
 
     if (_navViewStream != null) {
@@ -142,7 +175,7 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
     _navViewStream = model.navStream.listen((nav) {
       setState(() {
         var model = AppDataProvider.of(context).model;
-        print("******** ${model.view.view}");
+
         switch (model.view.view) {
           case View.Home:
             _selectedIndex = 0;
@@ -154,24 +187,34 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
             _selectedIndex = 2;
             break;
           case View.Account:
-            _selectedIndex = 3;
+            print('valid Account **************');
+            if (model.isValidAccount) {
+              print('valid Account **************');
+              _selectedIndex = 3;
+            } else {
+              _selectedIndex = 0;
+              Scaffold.of(_scaffold).showSnackBar(SnackBar(
+                content: Text(
+                    "Not available. You must setup apikey and secret in settings"),
+                duration: Duration(seconds: 3),
+              ));
+            }
             break;
           case View.News:
             _selectedIndex = 4;
             break;
           case View.Settings:
-         
             Navigator.push(context,
                 MaterialPageRoute(builder: (BuildContext buildContext) {
               return SettingsView();
             }));
             break;
           case View.About:
-  Navigator.push(context,
+            Navigator.push(context,
                 MaterialPageRoute(builder: (BuildContext buildContext) {
               return AboutView();
             }));
-          break;
+            break;
           default:
             _selectedIndex = 0;
             break;
@@ -181,16 +224,24 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
   }
 
   bool _loading = false;
+  BuildContext _scaffold;
   @override
   Widget build(BuildContext context) {
     _initListeners();
 
+    var scaffold = Scaffold(
+        bottomNavigationBar: _bottomNavigationBar(_selectedIndex),
+        body: Builder(
+          builder: (scaffoldContext) {
+            _scaffold = scaffoldContext;
+            return pages[_selectedIndex];
+          },
+        )
+        // )
+        );
+
     return Stack(children: [
-      Scaffold(
-          bottomNavigationBar: _bottomNavigationBar(_selectedIndex),
-          body: pages[_selectedIndex]
-          // )
-          ),
+      scaffold,
       Opacity(
         opacity: _loading ? 1.0 : 0.0,
         child: Center(
@@ -206,6 +257,12 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
     var model = AppDataProvider.of(context).model;
     if (_navViewStream != null) {
       _navViewStream.cancel();
+    }
+    if (_pageLoadingSub != null) {
+      _pageLoadingSub.cancel();
+    }
+    if (_errorSub != null) {
+      _errorSub.cancel();
     }
   }
 }
