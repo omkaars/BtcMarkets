@@ -9,8 +9,7 @@ import 'markettext.dart';
 
 class MarketPair extends StatefulWidget {
   MarketPair({Key key, this.market}) : super(key: key);
-  final StreamController<MarketData> changeMarketNotifier = new StreamController<MarketData>.broadcast();
-
+  
   final MarketData market;
 
   @override
@@ -18,12 +17,9 @@ class MarketPair extends StatefulWidget {
 
   void marketChange(MarketData m)
   {
-    if(m != null)
-      changeMarketNotifier.sink.add(m);
   }
   void dispose()
   {
-    changeMarketNotifier.close();
   }
 
 }
@@ -31,6 +27,7 @@ class MarketPair extends StatefulWidget {
 class _MarketPairState extends State<MarketPair> with AutomaticKeepAliveClientMixin<MarketPair>
 {
   _MarketPairState();
+  
   MarketData _market;
   Text _price, _volume;
   StreamSubscription _notification;
@@ -41,9 +38,9 @@ class _MarketPairState extends State<MarketPair> with AutomaticKeepAliveClientMi
   void initState()
   {
     super.initState();
-      _notification = widget.changeMarketNotifier.stream.listen((market){
-      changeMarket(market);
-    });
+  //    _notification = widget.changeMarketNotifier.stream.listen((market){
+    //  changeMarket(market);
+    //});
 
    
     _market = this.widget.market;

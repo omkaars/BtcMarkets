@@ -57,6 +57,7 @@ class _MarketsViewState extends State<MarketsView> {
             title: Text("Markets"),
             bottom: TabBar(
               isScrollable: true,
+              
               tabs: [
                 Tab(
                   text: "Favourites",

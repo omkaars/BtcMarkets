@@ -21,7 +21,9 @@ class _SettingsViewState extends State<SettingsView> {
     var clearColor = Colors.red;
     
     var model = AppDataProvider.of(context).model;
-
+    _keyController.text = model.settings.apiKey;
+    _secretController.text = model.settings.secret;
+    
     return new Scaffold(
         appBar: new AppBar(title: Text("Settings")),
         body: Column(
@@ -79,6 +81,7 @@ class _SettingsViewState extends State<SettingsView> {
                                             autocorrect: false,
                                             controller: _keyController,
                                             maxLength: 100,
+                                          
                                             decoration: InputDecoration(
                                               contentPadding:
                                                   EdgeInsets.all(12),

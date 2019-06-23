@@ -7,6 +7,8 @@ class MarketHelper {
   static Map get markets => {
     "btc": "Bitcoin",
     "aud": "Australian Dollar",
+    "usd": "US Dollar",
+    "bch": "Bitcoin Cash",
     "bchabc": "Bitcoin ABC",
     "bchsv": "Bitcoin SV",
     "bat" : "Basic Attention Token",
@@ -18,7 +20,10 @@ class MarketHelper {
     "eth" : "Ethereum",
     "etc" : "Ethereum Classic",
     "omg" : "Omise Go",
-
+    "fct" : "Factom",
+    "maid":"Maid safe",
+    "dao" : "Etheruem DAO"
+    
 
   };
   static String getMarketName(String code)

@@ -6,6 +6,9 @@ import 'package:btcmarkets/models/markettrades.dart';
 import 'package:btcmarkets/models/navview.dart';
 import 'package:btcmarkets/models/newsitem.dart';
 import 'package:btcmarkets/models/settings.dart';
+import 'package:btcmarkets/models/walletcurrency.dart';
+import 'package:btcmarkets/models/walletfundtransfer.dart';
+import 'package:btcmarkets/models/walletorder.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:html/parser.dart' show parse;
@@ -15,17 +18,19 @@ import '../api/btcmarketsapi.dart';
 import '../constants.dart';
 import '../models/marketdata.dart';
 
-class AppDataModel{
+class AppDataModel {
   BtcMarketsApi _api;
 
   final List<MarketData> markets = new List<MarketData>();
+  final List<ActiveMarket> activeMarkets = new List<ActiveMarket>();
+
+  final List<WalletCurrency> balances = new List<WalletCurrency>();
 
   final Settings settings = new Settings();
 
-
   final MarketHistory marketHistory = new MarketHistory();
 
-  MarketTrades  _marketTrades = new MarketTrades();
+  MarketTrades _marketTrades = new MarketTrades();
   MarketTrades get marketTrades => _marketTrades;
 
   List<MarketData> get audMarkets =>
@@ -55,9 +60,11 @@ class AppDataModel{
   final StreamController<String> _tradesRefreshController =
       StreamController<String>.broadcast();
 
-  final StreamController<String> _settingsController = StreamController<String>.broadcast();
+  final StreamController<String> _settingsController =
+      StreamController<String>.broadcast();
 
-  final StreamController<NavView> _navController = StreamController<NavView>.broadcast();
+  final StreamController<NavView> _navController =
+      StreamController<NavView>.broadcast();
 
   StreamSink<String> get marketsRefreshSink => _marketsRefreshController.sink;
   Stream<String> get marketsRefreshStream => _marketsRefreshController.stream;
@@ -86,19 +93,23 @@ class AppDataModel{
     navView.view = View.Home;
     navView.subView = SubView.None;
     view = navView;
+
+    settings.apiKey = "";
+    settings.secret =
+        "";
+    _api.updateCredentials(settings.apiKey, settings.secret);
   }
 
-  void switchView(NavView nav)
-  {
+  void switchView(NavView nav) {
     view = nav;
     navSink.add(nav);
   }
 
-  void switchTheme(String theme)
-  {
+  void switchTheme(String theme) {
     settings.theme = theme;
     settingsSink.add("themeChanged");
   }
+
   Future refreshMarkets({isPullToRefesh = false}) async {
     debugPrint('Refreshing');
 
@@ -108,8 +119,22 @@ class AppDataModel{
     }
 
     try {
-      var data = await _api.getMarkets();
+      if (activeMarkets.isEmpty) {
+        var activeMarketResponse = await _api.getActiveMarkets();
+        if (activeMarketResponse.success) {
+          var activeMars = activeMarketResponse.activeMarkets;
+          if (activeMars != null && activeMars.isNotEmpty) {
+            for (var activeMarket in activeMars) {
+              activeMarkets.add(activeMarket);
+            }
+          }
+        }
+      }
+      var data = await _api.getMarkets(activeMarkets: activeMarkets);
 
+      try {
+        await refreshBalances();
+      } catch (e) {}
       markets.clear();
 
       for (Market market in data.markets) {
@@ -138,6 +163,16 @@ class AppDataModel{
           marketData.group = Constants.Favourites;
         }
 
+        try {
+          if (balances.isNotEmpty) {
+            var balance = balances
+                .firstWhere((bal) => bal.currency == marketData.instrument);
+            if (balance != null) {
+              //sprint("Balance found ${balance.currency}");
+              marketData.holdings = balance.pending + balance.balance;
+            }
+          }
+        } catch (e) {}
         markets.add(marketData);
       }
     } catch (e) {}
@@ -152,19 +187,247 @@ class AppDataModel{
     }
   }
 
-Future<MarketTrades> getTrades(String instrument, String currency) async
-{
-  await refreshTrades(instrument, currency);
-  return _marketTrades;
-}
+  Future<String> getTotalBalanceString(bool inBtc) async {
+    var currency = inBtc ? Constants.BTC : Constants.AUD;
 
-Future refreshTrades(String instrument, String currency,{isPullToRefesh = false}) async {
+    var balance = await getTotalBalance(inBtc);
+
+    var balString = MarketHelper.getValueFormat(currency, balance);
+
+    return balString;
+  }
+
+  Future<double> getTotalBalance(bool inBtc) async {
+    double total = 0.0;
+    try {
+      if (markets.isEmpty) {
+        await refreshMarkets();
+      }
+
+      var audBalance =
+          balances.firstWhere((bal) => bal.currency == Constants.AUD);
+      var btcMarket = markets.firstWhere((market) =>
+          market.currency == Constants.AUD &&
+          market.instrument == Constants.BTC);
+      var audTotal = 0.0;
+      markets.forEach((m) {
+        if (m.currency == Constants.AUD) {
+          if (m.holdings > 0 && m.lastPrice > 0) {
+            audTotal += m.lastPrice * m.holdings;
+          }
+        }
+      });
+
+      audTotal += audBalance.total;
+
+      if (inBtc) {
+        if (btcMarket.lastPrice > 0) {
+          total = audTotal / btcMarket.lastPrice;
+        }
+      } else {
+        total = audTotal;
+      }
+    } catch (e) {}
+    return total;
+  }
+
+  Future<MarketTrades> getTrades(String instrument, String currency) async {
+    await refreshTrades(instrument, currency);
+    return _marketTrades;
+  }
+
+  Future refreshBalances() async {
+    print("reloading balances...");
+
+    var accountData = await _api.getAccountBalances();
+
+    if (accountData.success) {
+      balances.clear();
+      var walletBal = accountData.balances;
+
+      if (walletBal != null && walletBal.isNotEmpty) {
+        var audBal = walletBal.firstWhere((b) => b.currency == Constants.AUD);
+
+        var audName = MarketHelper.getMarketName(Constants.AUD.toLowerCase());
+        if (audBal != null) {
+          balances.add(WalletCurrency(
+              name: audName,
+              currency: audBal.currency,
+              balance: audBal.balanceValue,
+              pending: audBal.pendingFundsValue));
+        } else {
+          balances.add(WalletCurrency(
+              currency: Constants.AUD, balance: 0.0, pending: 0.0));
+        }
+        var btcBal = walletBal.firstWhere((b) => b.currency == Constants.BTC);
+        var btcName = MarketHelper.getMarketName(Constants.BTC.toLowerCase());
+        if (btcBal != null) {
+          balances.add(WalletCurrency(
+              name: btcName,
+              currency: btcBal.currency,
+              balance: btcBal.balanceValue,
+              pending: btcBal.pendingFundsValue));
+        } else {
+          balances.add(WalletCurrency(
+              currency: Constants.BTC, balance: 0.0, pending: 0.0));
+        }
+        walletBal.sort((a, b) => a.currency.compareTo(b.currency));
+
+        walletBal.forEach((bal) {
+          var isMarketExist =
+              activeMarkets.any((m) => m.instrument == bal.currency);
+
+          if (bal.currency != Constants.AUD &&
+              bal.currency != Constants.BTC &&
+              isMarketExist) {
+            var walletBal = WalletCurrency(
+                name: MarketHelper.getMarketName(bal.currency.toLowerCase()),
+                currency: bal.currency,
+                balance: bal.balanceValue,
+                pending: bal.pendingFundsValue);
+
+            balances.add(walletBal);
+          }
+        });
+      }
+    }
+  }
+
+  Future<List<WalletCurrency>> getWalletBalances({bool hideZeroBalance}) async {
+    var walletBalances = new List<WalletCurrency>();
+
+    await refreshBalances();
+
+    balances.forEach((walletBal) {
+      if (!hideZeroBalance ||
+          (hideZeroBalance &&
+              (walletBal.balance > 0 || walletBal.pending > 0))) {
+        walletBalances.add(walletBal);
+      }
+    });
+
+    return walletBalances;
+  }
+
+  Future<List<WalletOrder>> getOpenOrders() async {
+    print("Retrieving open orders ********");
+    var openOrders = new List<WalletOrder>();
+    try {
+      var response = await _api.getOpenOrders();
+      if (response.success) {
+        var orders = response.orders;
+        orders.forEach((order) 
+        {
+         
+          var walletOrder = new WalletOrder();
+          walletOrder.id = order.id;
+          walletOrder.instrument = order.instrument;
+          walletOrder.currency = order.currency;
+          walletOrder.price = order.priceValue;
+          walletOrder.volume = order.volumeValue;
+          walletOrder.side = order.orderSide;
+          walletOrder.type = order.ordertype;
+          walletOrder.timestamp = order.creationTime;
+          walletOrder.status = order.status;
+          openOrders.add(walletOrder);
+
+        });
+      }
+    } catch (e) {}
+
+    return openOrders;
+  }
+
+  Future<List<WalletOrder>> getOrderHistory(MarketData market) async {
+    print("Retrieving order history ********");
+    if(market == null)
+    {
+      market = markets[0];
+    }
+    var openOrders = new List<WalletOrder>();
+
+    try {
+      var response = await _api.getOrderHistory(market.instrument, market.currency);
+
+      if (response.success) {
+
+        var orders = response.orders;
+
+        orders.forEach((order) {
+
+          var walletOrder = new WalletOrder();
+
+          walletOrder.id = order.id;
+          walletOrder.instrument = order.instrument;
+          walletOrder.currency = order.currency;
+          walletOrder.price = order.priceValue;
+          walletOrder.volume = order.volumeValue;
+          walletOrder.side = order.orderSide;
+          walletOrder.type = order.ordertype;
+          walletOrder.timestamp = order.creationTime;
+          walletOrder.status = order.status;
+
+          if(order.trades != null)
+          {
+            var trades = new List<WalletTrade>();
+
+            order.trades.forEach((trade){
+              var t = WalletTrade();
+              t.timestamp = trade.creationTime;
+              t.price = trade.priceValue;
+              t.volume = trade.volumeValue;
+              trades.add(t);
+            });
+
+            walletOrder.trades = trades;
+          }
+          openOrders.add(walletOrder);
+
+        });
+      }
+    } catch (e) {}
+
+    return openOrders;
+  }
+
+  Future<List<WalletFundTransfer>> getFundsHistory() async {
+    print("Retrieving fund transfers ********");
+    var fundTransfers = new List<WalletFundTransfer>();
+    try {
+      var response = await _api.getFundTransferHistory();
+      if (response.success) {
+        var transfers = response.fundTransfers;
+        transfers.forEach((transfer) {
+          var fundTransfer = new WalletFundTransfer();
+          fundTransfer.id = transfer.fundTransferId;
+
+          fundTransfer.currency = transfer.currency;
+          fundTransfer.amount = transfer.amountValue;
+          fundTransfer.fee = transfer.feeValue;
+          fundTransfer.description = transfer.description;
+          fundTransfer.transferType = transfer.transferType;
+
+          if (transfer.cryptoPaymentDetail != null) {
+            fundTransfer.txid = transfer.cryptoPaymentDetail["txid"];
+            fundTransfer.address = transfer.cryptoPaymentDetail["address"];
+          }
+          fundTransfer.lastUpdate = transfer.lastUpdate;
+          fundTransfer.timestamp = transfer.creationTime;
+          fundTransfer.status = transfer.status;
+          fundTransfers.add(fundTransfer);
+        });
+      }
+    } catch (e) {
+      print(e);
+    }
+
+    return fundTransfers;
+  }
+
+  Future refreshTrades(String instrument, String currency,
+      {isPullToRefesh = false}) async {
     debugPrint('Refreshing trades');
 
-    // if (!isPullToRefesh) {
-    //   isLoading = true;
-    //   pageLoadingSink.add(true);
-    // }
     print("Calling refreshTrades");
     try {
       var data = await _api.getOrderBook(instrument, currency);
@@ -176,18 +439,11 @@ Future refreshTrades(String instrument, String currency,{isPullToRefesh = false}
     }
 
     tradesRefreshSink.add("Refresh");
-
-    // markets.sort((a,b)=> a.groupId.compareTo(b.groupId));
-
-    // if (!isPullToRefesh) {
-    //   isLoading = false;
-    //   pageLoadingSink.add(false);
-    // }
   }
 
   Future<MarketHistory> getMarketHistory(
       MarketData market, String duration) async {
-   // pageLoadingSink.add(true);
+    // pageLoadingSink.add(true);
 
     marketHistory.duration = duration;
     marketHistory.market = market;
@@ -261,12 +517,12 @@ Future refreshTrades(String instrument, String currency,{isPullToRefesh = false}
       print(e);
     }
 
-  //  pageLoadingSink.add(false);
+    //  pageLoadingSink.add(false);
     return marketHistory;
   }
 
   Future refreshMarketHistory(MarketData market, String duration) async {
-   // pageLoadingSink.add(true);
+    // pageLoadingSink.add(true);
     marketHistorySink.add(null);
     marketHistory.duration = duration;
     marketHistory.market = market;
@@ -282,7 +538,7 @@ Future refreshTrades(String instrument, String currency,{isPullToRefesh = false}
         case "3H":
           dateTime = DateTime.now().subtract(new Duration(hours: 3));
           tickTime = TickTime.hour;
-        break;  
+          break;
         case "6H":
           dateTime = DateTime.now().subtract(new Duration(hours: 6));
           tickTime = TickTime.hour;
@@ -338,36 +594,28 @@ Future refreshTrades(String instrument, String currency,{isPullToRefesh = false}
         var ticks = history.ticks;
         marketHistory.refresh(ticks);
       }
-      
     } catch (e) {
       print("Exception in marketHistory **************");
       print(e);
     }
 
     marketHistorySink.add("refresh");
-  //  pageLoadingSink.add(false);
+    //  pageLoadingSink.add(false);
   }
 
   void updateFavourite(MarketData market, bool add) {
     bool refresh = false;
-    debugPrint("Updating favourite ${market.pair} -> $add");
 
-    debugPrint("FavGroup found");
     market.isStarred = add;
     refresh = true;
     if (add) {
-      debugPrint("Adding new");
-
       var isAdded = _favourites.any((m) => m == market.pair);
-      debugPrint("Isadded $isAdded");
       if (!isAdded) {
-        debugPrint("Adding found");
         _favourites.add(market.pair);
 
         refresh = true;
       }
     } else {
-      debugPrint("Removing");
       var favMarket = _favourites.any((m) => m == market.pair);
 
       if (favMarket != null) {
@@ -428,10 +676,8 @@ Future refreshTrades(String instrument, String currency,{isPullToRefesh = false}
 
   List<NewsItem> _newsItems;
   Future<List<NewsItem>> getNews() async {
-    if (_newsItems == null || _newsItems.length<=0) {
-        
-      if(_newsItems == null)
-      {
+    if (_newsItems == null || _newsItems.length <= 0) {
+      if (_newsItems == null) {
         _newsItems = new List<NewsItem>();
       }
 
@@ -440,22 +686,19 @@ Future refreshTrades(String instrument, String currency,{isPullToRefesh = false}
         var response = await dio.get(
             "https://support.btcmarkets.net/hc/en-us/categories/360000148368-News-and-Announcements");
         var html = response.data;
-        
-        var document = parse(html);
-       
-        var links = document.querySelectorAll('a.article-list-link');
-       
-        for (var link in links) {
 
+        var document = parse(html);
+
+        var links = document.querySelectorAll('a.article-list-link');
+
+        for (var link in links) {
           var newsItem = new NewsItem();
           newsItem.title = link.text;
-          newsItem.link = "https://support.btcmarkets.net"+link.attributes["href"];
+          newsItem.link =
+              "https://support.btcmarkets.net" + link.attributes["href"];
           _newsItems.add(newsItem);
-
         }
-      } catch (e) {
-       
-      }
+      } catch (e) {}
     }
     return _newsItems;
   }
@@ -468,6 +711,4 @@ Future refreshTrades(String instrument, String currency,{isPullToRefesh = false}
     _navController.close();
     _pageLoading.close();
   }
-
-  
 }

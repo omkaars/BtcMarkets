@@ -43,6 +43,7 @@ AppPopupMenu _popupMenu = new AppPopupMenu();
 
                     var item = data[position];
                     return ListTile(
+                      leading: Icon(Icons.open_in_new),
                       title: Text(item.title),
                       onTap: (){
                         _openUrl(item.link);

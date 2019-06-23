@@ -1,3 +1,5 @@
+import 'package:btcmarkets/helpers/markethelper.dart';
+
 import '../api/btcmarketsapi.dart';
 
 class MarketData extends Market
@@ -9,5 +11,8 @@ class MarketData extends Market
 
   
   double holdings;
+
+  
+  String get balanceString => MarketHelper.getValueFormat(instrument, holdings);
   
 }

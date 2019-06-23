@@ -1,6 +1,11 @@
+import 'package:btcmarkets/api/btcmarketsapi.dart';
+import 'package:btcmarkets/views/fundshistory.dart';
+import 'package:btcmarkets/views/openorders.dart';
+import 'package:btcmarkets/views/walletbalances.dart';
 import 'package:flutter/material.dart';
 import 'apppopupmenu.dart';
 import 'navdrawar.dart';
+import 'orderhistory.dart';
 
 
 class AccountView extends StatefulWidget {
@@ -44,10 +49,10 @@ class _AccountViewState extends State<AccountView> {
 
            ),
            body:  TabBarView(children: <Widget>[
-              Text("Balanaces"),
-              Text("Open orders"),
-              Text("Order history"),
-              Text("Fund history")
+              WalletBalancesView(),
+              OpenOrdersView(),
+              OrderHistoryView(),
+              FundsHistoryView()
            ],)
 
        ),

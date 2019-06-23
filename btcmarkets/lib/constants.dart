@@ -2,6 +2,8 @@ import 'package:intl/intl.dart';
 class Constants {
   static const String BTC = "BTC";
   static const String AUD = "AUD";
+  static const String ETH = "ETH";
+  
   static const String Favourites = "Favourites";
   static const String AudMarkets = "AUD Markets";
   static const String BtcMarkets = "BTC Markets";

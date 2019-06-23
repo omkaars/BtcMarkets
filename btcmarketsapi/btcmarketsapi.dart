@@ -264,7 +264,7 @@ enum TickTime
 
 class Paging
 {
-   Paging();
+   Paging({this.newer, this.older});
 
    String newer;
    String older;
@@ -280,6 +280,395 @@ class Paging
    };
 }
 
+class Trades {
+  int id;
+  int creationTime;
+  String description;
+  int price;
+  int volume;
+  String side;
+  int fee;
+  int orderId;
+
+  Trades(
+      {this.id,
+      this.creationTime,
+      this.description,
+      this.price,
+      this.volume,
+      this.side,
+      this.fee,
+      this.orderId});
+
+  Trades.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    creationTime = json['creationTime'];
+    description = json['description'];
+    price = json['price'];
+    volume = json['volume'];
+    side = json['side'];
+    fee = json['fee'];
+    orderId = json['orderId'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['id'] = this.id;
+    data['creationTime'] = this.creationTime;
+    data['description'] = this.description;
+    data['price'] = this.price;
+    data['volume'] = this.volume;
+    data['side'] = this.side;
+    data['fee'] = this.fee;
+    data['orderId'] = this.orderId;
+    return data;
+  }
+}
+
+class Orders {
+  int id;
+  String currency;
+  String instrument;
+  String orderSide;
+  String ordertype;
+  int creationTime;
+  String status;
+  String errorMessage;
+  int price;
+  int volume;
+  int openVolume;
+  String clientRequestId;
+  List<Trades> trades;
+
+  Orders(
+      {this.id,
+      this.currency,
+      this.instrument,
+      this.orderSide,
+      this.ordertype,
+      this.creationTime,
+      this.status,
+      this.errorMessage,
+      this.price,
+      this.volume,
+      this.openVolume,
+      this.clientRequestId,
+      this.trades});
+
+  Orders.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    currency = json['currency'];
+    instrument = json['instrument'];
+    orderSide = json['orderSide'];
+    ordertype = json['ordertype'];
+    creationTime = json['creationTime'];
+    status = json['status'];
+    errorMessage = json['errorMessage'];
+    price = json['price'];
+    volume = json['volume'];
+    openVolume = json['openVolume'];
+    clientRequestId = json['clientRequestId'];
+    if (json['trades'] != null) {
+      trades = new List<Trades>();
+      json['trades'].forEach((v) {
+        trades.add(new Trades.fromJson(v));
+      });
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['id'] = this.id;
+    data['currency'] = this.currency;
+    data['instrument'] = this.instrument;
+    data['orderSide'] = this.orderSide;
+    data['ordertype'] = this.ordertype;
+    data['creationTime'] = this.creationTime;
+    data['status'] = this.status;
+    data['errorMessage'] = this.errorMessage;
+    data['price'] = this.price;
+    data['volume'] = this.volume;
+    data['openVolume'] = this.openVolume;
+    data['clientRequestId'] = this.clientRequestId;
+    if (this.trades != null) {
+      data['trades'] = this.trades.map((v) => v.toJson()).toList();
+    }
+    return data;
+  }
+}
+class OrderHistory {
+  bool success;
+  String errorCode;
+  String errorMessage;
+  List<Orders> orders;
+  Paging paging;
+
+  OrderHistory(
+      {this.success,
+      this.errorCode,
+      this.errorMessage,
+      this.orders,
+      this.paging});
+
+  OrderHistory.fromJson(Map<String, dynamic> json) {
+    success = json['success'];
+    errorCode = json['errorCode'];
+    errorMessage = json['errorMessage'];
+    if (json['orders'] != null) {
+      orders = new List<Orders>();
+      json['orders'].forEach((v) {
+        orders.add(new Orders.fromJson(v));
+      });
+    }
+    paging =
+        json['paging'] != null ? new Paging.fromJson(json['paging']) : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['success'] = this.success;
+    data['errorCode'] = this.errorCode;
+    data['errorMessage'] = this.errorMessage;
+    if (this.orders != null) {
+      data['orders'] = this.orders.map((v) => v.toJson()).toList();
+    }
+    if (this.paging != null) {
+      data['paging'] = this.paging.toJson();
+    }
+    return data;
+  }
+}
+
+
+class TradeHistory {
+  bool success;
+  String errorCode;
+  String errorMessage;
+  List<Trades> trades;
+  Paging paging;
+
+  TradeHistory(
+      {this.success,
+      this.errorCode,
+      this.errorMessage,
+      this.trades,
+      this.paging});
+
+  TradeHistory.fromJson(Map<String, dynamic> json) {
+    success = json['success'];
+    errorCode = json['errorCode'];
+    errorMessage = json['errorMessage'];
+    if (json['trades'] != null) {
+      trades = new List<Trades>();
+      json['trades'].forEach((v) {
+        trades.add(new Trades.fromJson(v));
+      });
+    }
+    paging =
+        json['paging'] != null ? new Paging.fromJson(json['paging']) : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['success'] = this.success;
+    data['errorCode'] = this.errorCode;
+    data['errorMessage'] = this.errorMessage;
+    if (this.trades != null) {
+      data['trades'] = this.trades.map((v) => v.toJson()).toList();
+    }
+    if (this.paging != null) {
+      data['paging'] = this.paging.toJson();
+    }
+    return data;
+  }
+}
+
+class OpenOrders {
+  bool success;
+  String errorCode;
+  String errorMessage;
+  List<Orders> orders;
+
+  OpenOrders({this.success, this.errorCode, this.errorMessage, this.orders});
+
+  OpenOrders.fromJson(Map<String, dynamic> json) {
+    success = json['success'];
+    errorCode = json['errorCode'];
+    errorMessage = json['errorMessage'];
+    if (json['orders'] != null) {
+      orders = new List<Orders>();
+      json['orders'].forEach((v) {
+        orders.add(new Orders.fromJson(v));
+      });
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['success'] = this.success;
+    data['errorCode'] = this.errorCode;
+    data['errorMessage'] = this.errorMessage;
+    if (this.orders != null) {
+      data['orders'] = this.orders.map((v) => v.toJson()).toList();
+    }
+    return data;
+  }
+}
+
+class FundTransferHistory {
+  bool success;
+  String errorCode;
+  String errorMessage;
+  List<FundTransfer> fundTransfers;
+
+  FundTransferHistory(
+      {this.success, this.errorCode, this.errorMessage, this.fundTransfers});
+
+  FundTransferHistory.fromJson(Map<String, dynamic> json) {
+    success = json['success'];
+    errorCode = json['errorCode'];
+    errorMessage = json['errorMessage'];
+    if (json['fundTransfers'] != null) {
+      fundTransfers = new List<FundTransfer>();
+      json['fundTransfers'].forEach((v) {
+        fundTransfers.add(new FundTransfer.fromJson(v));
+      });
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['success'] = this.success;
+    data['errorCode'] = this.errorCode;
+    data['errorMessage'] = this.errorMessage;
+    if (this.fundTransfers != null) {
+      data['fundTransfers'] =
+          this.fundTransfers.map((v) => v.toJson()).toList();
+    }
+    return data;
+  }
+}
+
+class FundTransfer {
+  String status;
+  int fundTransferId;
+  String description;
+  int creationTime;
+  String currency;
+  int amount;
+  int fee;
+  String transferType;
+  String errorMessage;
+  int lastUpdate;
+  dynamic cryptoPaymentDetail;
+
+  FundTransfer(
+      {this.status,
+      this.fundTransferId,
+      this.description,
+      this.creationTime,
+      this.currency,
+      this.amount,
+      this.fee,
+      this.transferType,
+      this.errorMessage,
+      this.lastUpdate,
+      this.cryptoPaymentDetail});
+
+  FundTransfer.fromJson(Map<String, dynamic> json) {
+      status = json['status'];
+    fundTransferId = json['fundTransferId'];
+    description = json['description'];
+    creationTime = json['creationTime'];
+    currency = json['currency'];
+    amount = json['amount'];
+    fee = json['fee'];
+    transferType = json['transferType'];
+    errorMessage = json['errorMessage'];
+    lastUpdate = json['lastUpdate'];
+    cryptoPaymentDetail = json['cryptoPaymentDetail'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['status'] = this.status;
+    data['fundTransferId'] = this.fundTransferId;
+    data['description'] = this.description;
+    data['creationTime'] = this.creationTime;
+    data['currency'] = this.currency;
+    data['amount'] = this.amount;
+    data['fee'] = this.fee;
+    data['transferType'] = this.transferType;
+    data['errorMessage'] = this.errorMessage;
+    data['lastUpdate'] = this.lastUpdate;
+    data['cryptoPaymentDetail'] = this.cryptoPaymentDetail;
+    return data;
+  }
+}
+class CryptoAddress {
+  bool success;
+  String errorCode;
+  String errorMessage;
+  String address;
+  String currency;
+
+  CryptoAddress(
+      {this.success,
+      this.errorCode,
+      this.errorMessage,
+      this.address,
+      this.currency});
+
+  CryptoAddress.fromJson(Map<String, dynamic> json) {
+    success = json['success'];
+    errorCode = json['errorCode'];
+    errorMessage = json['errorMessage'];
+    address = json['address'];
+    currency = json['currency'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['success'] = this.success;
+    data['errorCode'] = this.errorCode;
+    data['errorMessage'] = this.errorMessage;
+    data['address'] = this.address;
+    data['currency'] = this.currency;
+    return data;
+  }
+}
+class WithdrawalFee {
+  bool success;
+  String errorCode;
+  String errorMessage;
+  int fee;
+  String currency;
+
+  WithdrawalFee(
+      {this.success,
+      this.errorCode,
+      this.errorMessage,
+      this.fee,
+      this.currency});
+
+  WithdrawalFee.fromJson(Map<String, dynamic> json) {
+    success = json['success'];
+    errorCode = json['errorCode'];
+    errorMessage = json['errorMessage'];
+    fee = json['fee'];
+    currency = json['currency'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['success'] = this.success;
+    data['errorCode'] = this.errorCode;
+    data['errorMessage'] = this.errorMessage;
+    data['fee'] = this.fee;
+    data['currency'] = this.currency;
+    return data;
+  }
+}
 class HistoricalTick 
 {
 
@@ -324,6 +713,35 @@ class HistoricalTick
         'volume' : volume,
         'volumeValue': volumeValue
       };
+}
+class FundTransferData {
+  bool success;
+  Null errorCode;
+  Null errorMessage;
+  FundTransfer fundtransfer;
+
+  FundTransferData(
+      {this.success, this.errorCode, this.errorMessage, this.fundtransfer});
+
+  FundTransferData.fromJson(Map<String, dynamic> json) {
+    success = json['success'];
+    errorCode = json['errorCode'];
+    errorMessage = json['errorMessage'];
+    fundtransfer = json['fundtransfer'] != null
+        ? new FundTransfer.fromJson(json['fundtransfer'])
+        : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['success'] = this.success;
+    data['errorCode'] = this.errorCode;
+    data['errorMessage'] = this.errorMessage;
+    if (this.fundtransfer != null) {
+      data['fundtransfer'] = this.fundtransfer.toJson();
+    }
+    return data;
+  }
 }
 class HistoricalTicks extends ApiResponse {
   Paging paging = new Paging();
@@ -749,6 +1167,205 @@ Future<OrderBook> getOrderBook(String instrument, String currency) async
     }
 
     return balances;
+  }
+ /**
+   *  Gets the order history
+   */
+  Future<OrderHistory> getOrderHistory(String instrument, String currency, {String since, String forward}) async {
+    OrderHistory history = new OrderHistory();
+   
+
+    try {
+      var url = "${_baseUrl}/v2/order/history/${instrument}/${currency}";
+      
+      var params = new StringBuffer();
+      if(since != null)
+      {
+          params.write("since=$since");
+      }
+      if(forward != null)
+      {
+        params.write("forward=$forward");
+      }
+      if(params.isNotEmpty)
+      {
+        url = url +"?${params.toString()}";
+      }
+      var response = await _dio.get(url);
+      print(response.data);
+      var obj = OrderHistory.fromJson(response.data);
+      if (obj != null) {
+        history = obj;
+      }
+    } catch (e) {
+      print(e);
+      history.success = false;
+      history.errorMessage = e.toString();
+    }
+
+    return history;
+  }
+
+   /**
+   *  Gets the order history
+   */
+  Future<TradeHistory> getTradeHistory(String instrument, String currency) async {
+    TradeHistory history = new TradeHistory();
+   
+
+    try {
+      var url = "${_baseUrl}/v2/market/${instrument}/${currency}/trades";
+      
+    
+      var response = await _dio.get(url);
+      print(response.data);
+      var obj = TradeHistory.fromJson(response.data);
+      if (obj != null) {
+        history = obj;
+      }
+    } catch (e) {
+      print(e);
+      history.success = false;
+      history.errorMessage = e.toString();
+    }
+
+    return history;
+  }
+
+   /**
+   *  Gets the order history
+   */
+  Future<OpenOrders> getOpenOrders({String instrument, String currency}) async {
+    OpenOrders history = new OpenOrders();
+   
+
+    try {
+      var url = "${_baseUrl}/v2/order/open";
+       var params = new StringBuffer();
+      if(instrument != null)
+      {
+          params.write("instrument=$instrument");
+      }
+      if(currency != null)
+      {
+        params.write("currency=$currency");
+      }
+      if(params.isNotEmpty)
+      {
+        url = url +"?${params.toString()}";
+      }
+    
+      var response = await _dio.get(url);
+      print(response.data);
+      var obj = OpenOrders.fromJson(response.data);
+      if (obj != null) {
+        history = obj;
+      }
+    } catch (e) {
+      print(e);
+      history.success = false;
+      history.errorMessage = e.toString();
+    }
+
+    return history;
+  }
+
+  /**
+   *  Gets the order history
+   */
+  Future<FundTransferHistory> getFundTransferHistory({String since, String forward}) async {
+    FundTransferHistory history = new FundTransferHistory();
+   
+
+    try {
+      var url = "${_baseUrl}/fundtransfer/history";
+      
+      var params = new StringBuffer();
+      if(since != null)
+      {
+          params.write("since=$since");
+      }
+      if(forward != null)
+      {
+        params.write("forward=$forward");
+      }
+      if(params.isNotEmpty)
+      {
+        url = url +"?${params.toString()}";
+      }
+      var response = await _dio.get(url);
+      print(response.data);
+      var obj = FundTransferHistory.fromJson(response.data);
+      if (obj != null) {
+        history = obj;
+      }
+    } catch (e) {
+      print(e);
+      history.success = false;
+      history.errorMessage = e.toString();
+    }
+
+    return history;
+  }
+
+  Future<CryptoAddress> getDepositAddress(String instrument) async {
+    CryptoAddress address = new CryptoAddress();
+
+    try {
+      var response = await _dio
+          .get("${_baseUrl}/v2/fundtransfer/deposit/address/${instrument}");
+
+      var data = response.data;
+      var addr = CryptoAddress.fromJson(data);
+      if (addr != null) {
+        address = addr;
+      }
+    } catch (e) {
+      address.success = false;
+      address.errorMessage = e.toString();
+    }
+
+    return address;
+  }
+
+  Future<WithdrawalFee> getWithdrawalFee(String instrument) async {
+    WithdrawalFee withFee = new WithdrawalFee();
+
+    try {
+      var response = await _dio
+          .get("${_baseUrl}/v2/fundtransfer/withdrawal/fee/${instrument}");
+
+      var data = response.data;
+      var fee = WithdrawalFee.fromJson(data);
+      if (fee != null) {
+        withFee = fee;
+      }
+    } catch (e) {
+      withFee.success = false;
+      withFee.errorMessage = e.toString();
+    }
+
+    return withFee;
+  }
+
+  Future<FundTransferData> getFundTransfer(int fundTransferId) async {
+    FundTransferData transferData = new FundTransferData();
+
+    try {
+      var response = await _dio
+          .get("${_baseUrl}/v2/fundtransfer/detail?id=$fundTransferId");
+
+      var data = response.data;
+      var fundTransfer = FundTransferData.fromJson(data);
+      if (fundTransfer != null) {
+        transferData = fundTransfer;
+      }
+    } catch (e) {
+      transferData.success = false;
+      transferData.errorMessage = e.toString();
+    }
+
+    return transferData;
   }
 
   Future<TradingFee> getTradingFee(String instrument, String currency) async {

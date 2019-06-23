@@ -109,14 +109,37 @@ void main() async {
 
   var appData = new AppData();
 
-  var apiKey = "ac400ad8-6051-4dc9-aaf3-2dd3f8a4c0d6";
+  var apiKey = "";
   var secret =
-      "zE4rPkfizqOYQvbYQhOths6KiS2SyBKI3zRbdbu5qM1ha4VgPu4Om/9zaUAuFm80zGCiVSbSD0NK/ar3BWzpJg==";
+      "";
   appData.updateCredentials(apiKey, secret);
-  appData.getOrderBook("BTC","AUD");
+  //appData.getOrderBook("BTC","AUD");
 
-  // // var balances = await appData.api.getAccountBalance();
-  // // print(json.encode(balances));
+  // var balances = await appData.api.getAccountBalance();
+  // print(json.encode(balances));
+
+  // var orderHistory = await appData.api.getOrderHistory("BTC", "AUD");
+  // print(json.encode(orderHistory));
+
+//     var tradeHistory = await appData.api.getTradeHistory("BTC", "AUD");
+// print(json.encode(tradeHistory));
+
+//  var openOrders = await appData.api.getOpenOrders();
+// print(json.encode(openOrders));
+
+
+ var fundHistory = await appData.api.getFundTransferHistory();
+print(json.encode(fundHistory));
+
+// var fundTransfer = await appData.api.getFundTransfer(2538214272);
+// print(json.encode(fundTransfer));
+
+// var withdrawalFee = await appData.api.getWithdrawalFee("BTC");
+// print(json.encode(withdrawalFee));
+
+// var depositAddress = await appData.api.getDepositAddress("BTC");
+// print(json.encode(depositAddress));
+
   // var activeMarkets = await appData.api.getActiveMarkets();
   // print(json.encode(activeMarkets));
   // var tradingFee = await appData.api.getTradingFee("BTC", "AUD");
