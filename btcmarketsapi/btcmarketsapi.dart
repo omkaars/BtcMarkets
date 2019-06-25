@@ -1513,6 +1513,8 @@ class BtcMarketSocketsV2 {
 
     var signature = base64.encode(bytes);
 
+    
+
     return signature;
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../constants.dart';
 
@@ -32,6 +33,10 @@ class MarketHelper {
     String name = markets[code]??"";
     
     return name;
+  }
+  static String getPercentageFormat(double value)
+  {
+      return NumberFormat.percentPattern("en-AU").format(value);
   }
 
   static String getValueFormat(String currency, double value)

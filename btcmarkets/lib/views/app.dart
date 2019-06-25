@@ -1,6 +1,12 @@
 import 'dart:async';
+import 'dart:io';
 
+// import 'package:appcenter/appcenter.dart';
+// import 'package:appcenter_analytics/appcenter_analytics.dart';
+// import 'package:appcenter_crashes/appcenter_crashes.dart';
+import 'package:btcmarkets/models/appmessage.dart';
 import 'package:btcmarkets/models/navview.dart';
+import 'package:btcmarkets/views/password.dart';
 import 'package:btcmarkets/views/settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -16,6 +22,7 @@ import 'trades.dart';
 import 'account.dart';
 import '../providers/appdataprovider.dart';
 import '../viewmodels/appdatamodel.dart';
+import 'password.dart';
 
 class CustomPopupMenu {
   CustomPopupMenu({this.title, this.icon});
@@ -25,7 +32,18 @@ class CustomPopupMenu {
 }
 
 class BtcMarketsApp extends StatefulWidget {
-  BtcMarketsApp();
+  BtcMarketsApp()
+  {
+   // initAppCenter();
+  }
+
+// void initAppCenter() async {
+//   print("Initialising app center");
+  
+//   var appSecret = Platform.isIOS ? "5d6b2da9-493f-403b-8831-1ba0a7bbf457" : "6c97d9a4-5334-4670-856d-e3e7c186b8f1";
+//   await AppCenter.start(
+//       appSecret, [AppCenterAnalytics.id, AppCenterCrashes.id]);
+// }
 
   @override
   _BtcMarketsAppState createState() => _BtcMarketsAppState();
@@ -54,6 +72,8 @@ class _BtcMarketsAppState extends State<BtcMarketsApp> {
   Widget build(BuildContext context) {
     if (_model == null) {
       _model = AppDataModel();
+    
+     
     }
     return AppDataProvider(
         model: _model,
@@ -68,10 +88,19 @@ class _BtcMarketsAppState extends State<BtcMarketsApp> {
                 _theme = darkTheme;
                 break;
             }
+            Widget homeScreen;
+            if(_model.passwordRequired)
+            {
+              homeScreen = PasswordView();
+            }
+            else
+            {
+             homeScreen = BottomMenuController();
+            }
             return MaterialApp(
                 title: 'BTC Markets',
                 theme: _theme,
-                home: BottomMenuController(),
+                home: homeScreen,
                 routes: <String, WidgetBuilder>{});
           },
         ));
@@ -143,7 +172,7 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
         selectedItemColor: Theme.of(context).accentColor,
       );
 
-  StreamSubscription _pageLoadingSub, _errorSub;
+  StreamSubscription _pageLoadingSub, _messageSub;
 
   void _initListeners() {
     var model = AppDataProvider.of(context).model;
@@ -157,14 +186,19 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
       });
     });
 
-    if (_errorSub != null) {
-      _errorSub.cancel();
+    if (_messageSub != null) {
+      _messageSub.cancel();
     }
-    _errorSub = model.errorNotifierStream.listen((error) {
+    _messageSub = model.messageNotifierStream.listen((appMessage) {
       if (_scaffold != null) {
+        var color = Colors.green;
+        if(appMessage.messageType == MessageType.error)
+        {
+          color = Colors.red;
+        }
         Scaffold.of(_scaffold).showSnackBar(SnackBar(
-            backgroundColor: Colors.red,
-            content: Text(error),
+            backgroundColor: color,
+            content: Text(appMessage.message),
             duration: Duration(seconds: 3)));
       }
     });
@@ -187,9 +221,9 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
             _selectedIndex = 2;
             break;
           case View.Account:
-            print('valid Account **************');
+           // print('valid Account **************');
             if (model.isValidAccount) {
-              print('valid Account **************');
+             // print('valid Account **************');
               _selectedIndex = 3;
             } else {
               _selectedIndex = 0;
@@ -261,8 +295,8 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
     if (_pageLoadingSub != null) {
       _pageLoadingSub.cancel();
     }
-    if (_errorSub != null) {
-      _errorSub.cancel();
+    if (_messageSub != null) {
+      _messageSub.cancel();
     }
   }
 }

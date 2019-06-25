@@ -30,6 +30,7 @@ class _HomeViewState extends State<HomeView> {
     super.initState();
 
     _totalInBtc = false;
+    
   }
 
   Future<Null> _onRefresh() async {

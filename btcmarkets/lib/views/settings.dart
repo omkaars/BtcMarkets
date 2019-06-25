@@ -1,16 +1,110 @@
+import 'package:btcmarkets/models/settings.dart';
 import 'package:btcmarkets/providers/appdataprovider.dart';
+import 'package:btcmarkets/views/setpassword.dart';
 import 'package:flutter/material.dart';
+import 'package:qr_reader/qr_reader.dart';
 
 class SettingsView extends StatefulWidget {
   SettingsView();
-
+  final TextEditingController keyController = new TextEditingController();
+  final TextEditingController secretController = new TextEditingController();
+  final ApiCredentials apiCredentials = ApiCredentials();
   @override
   _SettingsViewState createState() => _SettingsViewState();
 }
 
 class _SettingsViewState extends State<SettingsView> {
-  final TextEditingController _keyController = new TextEditingController();
-  final TextEditingController _secretController = new TextEditingController();
+  ApiCredentials _oldCredentials;
+  final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
+  @override
+  void initState() {
+    super.initState();
+
+  }
+
+  void showMessage(String message)
+  {
+     _scaffoldKey.currentState.showSnackBar(SnackBar(backgroundColor: Colors.green, content: Text(message)));
+  }
+  void showError(String error)
+  {
+    _scaffoldKey.currentState.showSnackBar(SnackBar(backgroundColor: Colors.red, content: Text(error)));
+  }
+  void readApiKey() async {
+    var model = AppDataProvider.of(context).model;
+
+    try {
+      var qrReader = QRCodeReader();
+      var apiKey = await qrReader.scan();
+
+      widget.keyController.text = apiKey;
+      model.apiCredentials.apiKey = apiKey;
+    } catch (e) {
+      model.showError("Cannot read QR code. Please provide apikey manually.");
+    }
+  }
+
+  void readSecret() async {
+    var model = AppDataProvider.of(context).model;
+
+    try {
+      var qrReader = QRCodeReader();
+
+      var secret = await qrReader.scan();
+      model.apiCredentials.secret = secret;
+
+      widget.secretController.text = secret;
+    } catch (e) {
+      showError("Cannot read QR code. Please provide secret manually.");
+    }
+  }
+
+  void save() async {
+    print("In save");
+
+    var model = AppDataProvider.of(context).model;
+
+    var apiKey = model.apiCredentials.apiKey;
+    var secret = model.apiCredentials.secret;
+
+    var isValidData = apiKey != null &&
+        apiKey.isNotEmpty &&
+        secret != null &&
+        secret.isNotEmpty &&
+        apiKey.length >= 10 &&
+        secret.length >= 10;
+   // print("isValidData $isValidData");
+    if (isValidData) {
+     // print("checking auth....");
+      var isValidAuth = await model.checkAuthentication(apiKey, secret);
+      if (!isValidAuth) {
+        showError("Invalid api credentails.");
+        return;
+      } else {
+        print("Has Credentials changes ${model.hasCredentialsChanged}");
+        print(model.currentCredentials.apiKey);
+        print(model.currentCredentials.secret);
+        if (model.hasCredentialsChanged) {
+
+           var password = await Navigator.of(context).push(new MaterialPageRoute<String>(
+        builder: (BuildContext context) {
+          return new SetPasswordView();
+        },
+        fullscreenDialog: true));
+          var result = await model.updateCredentials(password);
+          if (!result) {
+              showError("Something went wrong while updating credentials. Please try again");
+            return;
+          }
+
+          showMessage("Saved settings successfully");
+        }
+      }
+    }
+
+    await model.saveSettings();
+    // model.showMessage("Saved settings successfully.");
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,12 +113,15 @@ class _SettingsViewState extends State<SettingsView> {
     var hintColor = Theme.of(context).hintColor;
     var hintText = TextStyle(color: hintColor);
     var clearColor = Colors.red;
-    
+
+   // print("building settings agains");
     var model = AppDataProvider.of(context).model;
-    _keyController.text = model.settings.apiKey;
-    _secretController.text = model.settings.secret;
-    
+
+    widget.keyController.text = model.apiCredentials.apiKey;
+    widget.secretController.text = model.apiCredentials.secret;
+  
     return new Scaffold(
+        key: _scaffoldKey,
         appBar: new AppBar(title: Text("Settings")),
         body: Column(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -54,18 +151,19 @@ class _SettingsViewState extends State<SettingsView> {
                                       Row(
                                         children: <Widget>[
                                           Text("Use", style: hintText),
-                                          Padding(padding: EdgeInsets.symmetric(horizontal: 5),
-                                          child: 
-                                          Icon(Icons.filter_center_focus,
-                                              size: 36, color: hintColor),
-                                              ),
+                                          Padding(
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 5),
+                                            child: Icon(
+                                                Icons.filter_center_focus,
+                                                size: 36,
+                                                color: hintColor),
+                                          ),
                                           Text("to scan text from QR code.",
                                               style: hintText)
                                         ],
                                       ),
-                                      Text("Tap verify to test credentials.",
-                                          style: hintText),
-                                      SizedBox(height: 10),
+                                     
                                       Padding(
                                           padding:
                                               EdgeInsets.symmetric(vertical: 5),
@@ -79,9 +177,8 @@ class _SettingsViewState extends State<SettingsView> {
                                           Expanded(
                                               child: TextField(
                                             autocorrect: false,
-                                            controller: _keyController,
+                                            controller: widget.keyController,
                                             maxLength: 100,
-                                          
                                             decoration: InputDecoration(
                                               contentPadding:
                                                   EdgeInsets.all(12),
@@ -92,14 +189,17 @@ class _SettingsViewState extends State<SettingsView> {
                                                     color: clearColor,
                                                   ),
                                                   onPressed: () {
-                                                    _keyController.clear();
+                                                    widget.keyController
+                                                        .clear();
                                                   }),
                                               suffixIcon: IconButton(
                                                   icon: Icon(
                                                     Icons.filter_center_focus,
                                                     size: 36,
                                                   ),
-                                                  onPressed: () {}),
+                                                  onPressed: () {
+                                                    readApiKey();
+                                                  }),
                                             ),
                                           )),
                                         ],
@@ -123,7 +223,7 @@ class _SettingsViewState extends State<SettingsView> {
                                           Expanded(
                                               child: TextField(
                                             autocorrect: false,
-                                            controller: _secretController,
+                                            controller: widget.secretController,
                                             maxLength: 100,
                                             decoration: InputDecoration(
                                               contentPadding:
@@ -133,14 +233,17 @@ class _SettingsViewState extends State<SettingsView> {
                                                   icon: Icon(Icons.clear,
                                                       color: clearColor),
                                                   onPressed: () {
-                                                    _secretController.clear();
+                                                    widget.secretController
+                                                        .clear();
                                                   }),
                                               suffixIcon: IconButton(
                                                   icon: Icon(
                                                     Icons.filter_center_focus,
                                                     size: 36,
                                                   ),
-                                                  onPressed: () {}),
+                                                  onPressed: () {
+                                                    readSecret();
+                                                  }),
                                             ),
                                           )),
                                         ],
@@ -148,13 +251,13 @@ class _SettingsViewState extends State<SettingsView> {
                                     ],
                                   )),
                               SizedBox(height: 5),
-                              Align(
-                                  alignment: Alignment.center,
-                                  child: RaisedButton(
-                                      child: Text("Verify"),
-                                      color: accentColor,
-                                      onPressed: () {})),
-                              SizedBox(height: 5),
+                              // Align(
+                              //     alignment: Alignment.center,
+                              //     child: RaisedButton(
+                              //         child: Text("Verify"),
+                              //         color: accentColor,
+                              //         onPressed: () {})),
+                              // SizedBox(height: 5),
                             ],
                           ),
                         ),
@@ -167,16 +270,16 @@ class _SettingsViewState extends State<SettingsView> {
                     Container(
                         padding: EdgeInsets.only(right: 20),
                         child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        Expanded(
-                            child: ListTile(
-                          leading: Icon(Icons.color_lens),
-                          title: Text("Theme"),
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: <Widget>[
+                            Expanded(
+                                child: ListTile(
+                              leading: Icon(Icons.color_lens),
+                              title: Text("Theme"),
+                            )),
+                            _getThemes()
+                          ],
                         )),
-                        _getThemes()
-                      ],
-                    )),
                     Divider(height: 1),
                     SwitchListTile(
                       secondary: Icon(Icons.update),
@@ -195,11 +298,8 @@ class _SettingsViewState extends State<SettingsView> {
                     ),
                   ],
                 )),
-
-            
             Container(
-              padding: EdgeInsets.symmetric(horizontal:10),
-
+              padding: EdgeInsets.symmetric(horizontal: 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -207,7 +307,9 @@ class _SettingsViewState extends State<SettingsView> {
                   RaisedButton(
                     child: Text("Save"),
                     color: primaryColor,
-                    onPressed: () {},
+                    onPressed: () {
+                      save();
+                    },
                   )
                 ],
               ),
@@ -232,10 +334,9 @@ class _SettingsViewState extends State<SettingsView> {
             )),
       ],
       onChanged: (value) {
-        setState((){  
+        setState(() {
           model.switchTheme(value);
         });
-          
       },
       value: model.settings.theme,
     );

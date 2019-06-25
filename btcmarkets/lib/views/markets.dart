@@ -45,9 +45,9 @@ class _MarketsViewState extends State<MarketsView> {
         }
         break;
     }
-    print("SelectedIndex -->>> $_selectedIndex");
+    //print("SelectedIndex -->>> $_selectedIndex");
 
-    print("In Build $_selectedIndex");
+    //print("In Build $_selectedIndex");
     var controller = new DefaultTabController(
       initialIndex: _selectedIndex,
       length: 3,

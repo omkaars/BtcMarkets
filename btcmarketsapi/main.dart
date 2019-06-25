@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
-import 'btcmarketsapi.dart';
-
+import '../btcmarkets/lib/api/btcmarketsapi.dart';
+import '../btcmarkets/lib/constants.dart';
+import 'tests.dart';
+import 'package:intl/intl.dart';
 class AppData {
   static final AppData _appData = new AppData._internal();
 
@@ -92,6 +94,24 @@ void getOrderBook(String instrument, String currency) async
 }
 
 void main() async {
+
+//   print("adddd");
+//   var password = "Oakton123";
+//   var data = ;
+//   testEncDec(password,data);
+
+//   print("****************************************");
+
+//   var encStr = encrypt(password, data);
+//   print("Encrypted string ************* $encStr");
+
+// print("****************************************");
+  
+//   var decStr = decrypt(password, encStr);
+  
+//   print("Decrypted string $decStr");
+//  print("****************************************");
+   
 //var activeMarkets = await api.getActiveMarkets();
 
 //for(var activeMarket in activeMarkets)
@@ -110,13 +130,14 @@ void main() async {
   var appData = new AppData();
 
   var apiKey = "";
-  var secret =
-      "";
+  var secret = "";
+  
   appData.updateCredentials(apiKey, secret);
+
   //appData.getOrderBook("BTC","AUD");
 
-  // var balances = await appData.api.getAccountBalance();
-  // print(json.encode(balances));
+  var balances = await appData.api.getAccountBalances();
+  print(json.encode(balances));
 
   // var orderHistory = await appData.api.getOrderHistory("BTC", "AUD");
   // print(json.encode(orderHistory));
@@ -128,8 +149,8 @@ void main() async {
 // print(json.encode(openOrders));
 
 
- var fundHistory = await appData.api.getFundTransferHistory();
-print(json.encode(fundHistory));
+//  var fundHistory = await appData.api.getFundTransferHistory();
+// print(json.encode(fundHistory));
 
 // var fundTransfer = await appData.api.getFundTransfer(2538214272);
 // print(json.encode(fundTransfer));

@@ -48,7 +48,7 @@ class _MarketListState extends State<MarketList>
   Widget _buildUI() {
     var model = AppDataProvider.of(context).model;
 
-    debugPrint("Calling buildUI");
+    //debugPrint("Calling buildUI");
 
     List<MarketData> markets = new List<MarketData>();
     if (widget.group == Constants.BtcMarkets) {
@@ -64,13 +64,16 @@ class _MarketListState extends State<MarketList>
     var defaultTextStyle = Theme.of(context).textTheme.body1;
     var bigStyle = Theme.of(context).textTheme.subtitle;
     var hintColor = Theme.of(context).hintColor;
-
+    
     var listView = ListView.separated(
       separatorBuilder: (context, length) => Divider(height: 1),
       scrollDirection: Axis.vertical,
       itemCount: markets == null ? 0 : markets.length,
+
       itemBuilder: (BuildContext context, int index) {
         var market = markets[index];
+        var changeColor = market.change>=0?Colors.green:Colors.red;
+        var changeIcon = market.change>=0?Icons.arrow_drop_up:Icons.arrow_drop_down;
         return InkWell(
             onTap: () {
               showMarketDetail(market);
@@ -105,9 +108,8 @@ class _MarketListState extends State<MarketList>
                         ]),
                   ),
                   Expanded(
-                      flex: 2,
+                      flex: 3,
                       child: Container(
-                          padding: EdgeInsets.only(right: 1),
                           alignment: Alignment.bottomRight,
                           child: Wrap(
                             alignment: WrapAlignment.end,
@@ -139,7 +141,18 @@ class _MarketListState extends State<MarketList>
                             direction: Axis.vertical,
                             children: <Widget>[
                               Text(market.balanceString),
-                              Text(""),
+                              Wrap(
+                                  direction: Axis.horizontal,
+                                  alignment: WrapAlignment.start,
+                                  crossAxisAlignment: WrapCrossAlignment.start,
+                                  children: <Widget>[
+                                  
+                                    Text(market.changeString, style:TextStyle(color: changeColor)),
+                                      Align(alignment: Alignment.topRight,child:
+                                      Icon(changeIcon, color: changeColor,
+                                     size: 20,)),
+                                  ],
+                                )
                             ],
                           ))),
                   // Column(
@@ -200,7 +213,7 @@ class _MarketListState extends State<MarketList>
                   child: Row(children: <Widget>[
                     Expanded(flex: 5, child: Text("Coin")),
                     Expanded(
-                        flex: 4 ,
+                        flex: 5 ,
                         child: Align(
                             alignment: Alignment.centerRight,
                             child: Text("Price"))),
@@ -229,7 +242,7 @@ class _MarketListState extends State<MarketList>
       initialData: [],
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         try {
-          print("snapshot ${snapshot.data}");
+          //print("snapshot ${snapshot.data}");
           if (snapshot.hasError) {
             return Text(snapshot.error);
           }

@@ -13,7 +13,3 @@ class HexColor extends Color {
 }
 
 
-class MarketUiHelper 
-{
-}
-

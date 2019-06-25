@@ -1,12 +1,10 @@
-import 'dart:io';
 
-import 'package:btcmarkets/constants.dart';
+import '../constants.dart';
 import 'package:dio/dio.dart';
 import 'dart:convert';
 import 'dart:async';
 import "package:pointycastle/pointycastle.dart";
 import 'package:web_socket_channel/io.dart';
-import 'package:web_socket_channel/status.dart' as status;
 
 class ApiConstants {
   static const double CurrencyDecimal = 100000000;
@@ -1010,12 +1008,18 @@ class BtcMarketsApi {
     return _api;
   }
 
+  String get apiKey => _apiKey;
+  String get secret => _secret;
+
   BtcMarketsApi._internal() {
+
     _baseUrl = "https://api.btcmarkets.net";
 
     _dio = new Dio();
     _dio.interceptors.add(InterceptorsWrapper(
         onRequest: (RequestOptions options) {
+
+         // print("OnRequest");
           var path = options.uri.path;
           var method = options.method;
           var query = options.uri.query;
@@ -1031,7 +1035,6 @@ class BtcMarketsApi {
           }
 
           var buffer = new StringBuffer();
-
           buffer.writeln(path);
 
           if (query != null && query.isNotEmpty) {
@@ -1166,7 +1169,7 @@ class BtcMarketsApi {
     return tick;
   }
 
-Future<HistoricalTicks> getHistoricalTicks(String instrument, String currency, TickTime tickTime, DateTime since, bool forward) async {
+Future<HistoricalTicks> getHistoricalTicks(String instrument, String currency, TickTime tickTime, DateTime since, bool forward,{int limit}) async {
     HistoricalTicks ticks = new HistoricalTicks();
 
     try {
@@ -1192,9 +1195,14 @@ Future<HistoricalTicks> getHistoricalTicks(String instrument, String currency, T
       }
 
       int sinceTime = since.millisecondsSinceEpoch;
-
+      var url = "${_baseUrl}/v2/market/${instrument}/${currency}/tickByTime/$timeSpan?since=$sinceTime&indexForward=$forward";
+      if(limit != null)
+      {
+          url += "&limit=$limit";
+      }
+      
       var response =
-          await _dio.get("${_baseUrl}/v2/market/${instrument}/${currency}/tickByTime/$timeSpan?since=$sinceTime&indexForward=$forward");
+          await _dio.get(url);
 
       ticks = HistoricalTicks.fromJson(response.data);
 
@@ -1598,7 +1606,7 @@ class BtcMarketSocketsV2 {
     final mac = new Mac("SHA-512/HMAC");
     mac.init(keyParam);
     var bytes = mac.process(data);
-
+    
     var signature = base64.encode(bytes);
 
     return signature;
