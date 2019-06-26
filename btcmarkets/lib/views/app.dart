@@ -69,17 +69,36 @@ class _BtcMarketsAppState extends State<BtcMarketsApp> {
   AppDataModel _model;
 
   @override
+  void initState()
+  {
+    super.initState();
+   
+    _checkSettings();
+  }
+  void _checkSettings() async
+  {
+   
+   
+  }
+  @override
   Widget build(BuildContext context) {
-    if (_model == null) {
+   //  print("Checking settings");
+      if (_model == null) {
       _model = AppDataModel();
     
-     
     }
+
     return AppDataProvider(
+        appDataContext: AppDataContext(),
         model: _model,
         child: StreamBuilder(
           stream: _model.settingsStream,
           builder: (BuildContext buildContext, AsyncSnapshot<String> snapshot) {
+
+            if(!snapshot.hasData)
+            {
+              return Center(child: CircularProgressIndicator());
+            }
             switch (_model.settings.theme) {
               case "Light":
                 _theme = lightTheme;
@@ -89,6 +108,8 @@ class _BtcMarketsAppState extends State<BtcMarketsApp> {
                 break;
             }
             Widget homeScreen;
+         
+           // print("Password required ...... ${_model.passwordRequired}");
             if(_model.passwordRequired)
             {
               homeScreen = PasswordView();
@@ -130,15 +151,22 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
               var model = AppDataProvider.of(context).model;
 
               if (index == 3) {
+           //     print("checking valid account");
                 if (!model.isValidAccount) {
                   
               
                   _selectedIndex = 0;
-                  Scaffold.of(_scaffold).showSnackBar(SnackBar(backgroundColor: Colors.red,
-                    content: Text(
-                        "Account feature not available. You must setup valid apikey and secret in settings."),
-                    duration: Duration(seconds: 3),
-                  ));
+                  // Scaffold.of(_scaffold).showSnackBar(SnackBar(backgroundColor: Colors.red,
+                  //   content: Text(
+                  //       "Account feature not available. You must setup valid apikey and secret in settings."),
+                  //   duration: Duration(seconds: 3),
+                  // ));
+                //  print("is not valid account");
+                   var provider = AppDataProvider.of(_scaffold);
+                    if(provider != null)
+                    {
+                      provider.showMessage(AppMessage(message: "Account feature not available. You must setup valid apikey and secret in settings.", messageType: MessageType.error));
+                    }
                   return;
                 }
               }
@@ -190,17 +218,23 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
       _messageSub.cancel();
     }
     _messageSub = model.messageNotifierStream.listen((appMessage) {
-      if (_scaffold != null) {
-        var color = Colors.green;
-        if(appMessage.messageType == MessageType.error)
-        {
-          color = Colors.red;
-        }
-        Scaffold.of(_scaffold).showSnackBar(SnackBar(
-            backgroundColor: color,
-            content: Text(appMessage.message),
-            duration: Duration(seconds: 3)));
+
+      var provider = AppDataProvider.of(context);
+      if(provider != null)
+      {
+         provider.showMessage(appMessage);
       }
+      // if (_scaffold != null) {
+      //   var color = Colors.green;
+      //   if(appMessage.messageType == MessageType.error)
+      //   {
+      //     color = Colors.red;
+      //   }
+      //   Scaffold.of(_scaffold).showSnackBar(SnackBar(
+      //       backgroundColor: color,
+      //       content: Text(appMessage.message),
+      //       duration: Duration(seconds: 3)));
+      // }
     });
 
     if (_navViewStream != null) {

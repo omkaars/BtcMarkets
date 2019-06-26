@@ -131,7 +131,9 @@ class AppDataModel {
   {
     var apiKey = apiCredentials.apiKey;
     var secret = apiCredentials.secret;
-   return (apiCredentials.isValid && (apiKey != _api.apiKey || secret != _api.secret));
+
+    //print("in has credetials $apiKey $secret ${_api.apiKey} ${_api.secret}, ${apiCredentials.isValid}");
+   return (_api.apiKey == null || _api.secret == null) || (apiCredentials.isValid && (apiKey != _api.apiKey || secret != _api.secret));
 
   }
   Future saveSettings() async {
@@ -146,7 +148,7 @@ class AppDataModel {
     }
   }
 
-  void loadSettings() async {
+  Future loadSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
 
@@ -157,12 +159,12 @@ class AppDataModel {
 
       var settingsJson = prefs.getString("settings");
 
-     // print("LOading settings $settingsJson");
+      //print("LOading settings $settingsJson");
       if (settingsJson != null && settingsJson.isNotEmpty) {
         var data = json.decode(settingsJson);
-       // print("Settings data from json $data");
+        //print("Settings data from json $data");
         if (data != null) {
-        //  var credentials = data["credentials"];
+          var credentials = data["credentials"];
           //print("Data not null ${credentials}");
           var theme = data["theme"];
           if (theme == null || theme.isEmpty) {
@@ -172,38 +174,42 @@ class AppDataModel {
           settings.theme = data["theme"];
           settings.liveUpdates = data["liveUpdates"];
           settings.notifications = data["notifications"];
+
+         
         }
       }
     } catch (e) {
-   //   showError("Something went wrong while loading settings");
+     // showError("Something went wrong while loading settings");
+     print(e);
     }
+     settingsSink.add("Refresh");
   }
 
   Future<bool> loadCredentials(String password) async {
     var success = false;
     var credentials = settings.credentials;
-  //  print("Settings credentisl ${settings.credentials}");
+    //print("Settings credentisl ${settings.credentials}");
     if (credentials != null && credentials.isNotEmpty) {
       if (password == null || password.isEmpty) {
-   //     showError("Password is required.");
+      //  showError("Password is required.");
         return false;
       }
       try {
-     //   print("Decrypting");
+        //print("Decrypting");
         var apiJson = CryptoHelper.decrypt(password, credentials);
-    //    print("decoding $apiJson");
+        //print("decoding $apiJson");
         var obj = json.decode(apiJson);
         var apiKey = obj["apiKey"];
         var secret = obj["secret"];
-        print(apiKey);
-        print(secret);
+        //print(apiKey);
+        //print(secret);
         apiCredentials.apiKey = apiKey;
         apiCredentials.secret = secret;
         _api.updateCredentials(apiCredentials.apiKey, apiCredentials.secret);
         return true;
       } catch (cryptoError) {
         print(cryptoError);
-        //showError("Invalid password. Please provide a valid password.");
+        showError("Invalid password. Please provide a valid password.");
         return false;
       }
     }
@@ -215,7 +221,14 @@ class AppDataModel {
   ApiCredentials get currentCredentials => ApiCredentials(apiKey: _api.apiKey, secret: _api.secret);
  // bool passwordRequired = true;
   bool get passwordRequired =>
-   settings.credentials != null && settings.credentials.isNotEmpty;
+   settings.credentials != null && settings.credentials.isNotEmpty && !currentCredentials.isValid;
+
+  void resetCredentails()
+  {
+    _api.updateCredentials("", "");
+    settings.credentials = "";
+    saveSettings();
+  }
 
   Future<bool> updateCredentials(String password) async {
     var success = true;
@@ -243,7 +256,7 @@ class AppDataModel {
       if (settings.credentials == null || settings.credentials.isEmpty) {
         settings.credentials = encrypted;
       }
-      print("Credentials enrcypted string ${settings.credentials}");
+     // print("Credentials enrcypted string ${settings.credentials}");
 
       if (_api.apiKey != apiKey || _api.secret != secret) {
         settings.credentials = encrypted;
@@ -436,7 +449,7 @@ class AppDataModel {
 
     return isValid;
   }
-
+  
   Future refreshBalances() async {
     try {
       var accountData = await _api.getAccountBalances();

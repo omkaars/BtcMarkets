@@ -1,3 +1,4 @@
+import 'package:btcmarkets/models/appmessage.dart';
 import 'package:btcmarkets/models/settings.dart';
 import 'package:btcmarkets/providers/appdataprovider.dart';
 import 'package:btcmarkets/views/setpassword.dart';
@@ -8,28 +9,58 @@ class SettingsView extends StatefulWidget {
   SettingsView();
   final TextEditingController keyController = new TextEditingController();
   final TextEditingController secretController = new TextEditingController();
+  final TextEditingController password1Controller = new TextEditingController();
+  final TextEditingController password2Controller = new TextEditingController();
+
   final ApiCredentials apiCredentials = ApiCredentials();
+  final PasswordData passwordData = PasswordData();
+
   @override
   _SettingsViewState createState() => _SettingsViewState();
 }
 
+class PasswordData {
+  String password;
+  String confirmPassword;
+}
+
 class _SettingsViewState extends State<SettingsView> {
   ApiCredentials _oldCredentials;
+
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
+
   @override
   void initState() {
     super.initState();
+    widget.keyController.addListener(this.setApiKey);
+    widget.secretController.addListener(this.setSecret);
 
+    widget.password1Controller.addListener(this.setPassword);
+    widget.password2Controller.addListener(this.setConfirmPassword);
   }
 
-  void showMessage(String message)
-  {
-     _scaffoldKey.currentState.showSnackBar(SnackBar(backgroundColor: Colors.green, content: Text(message)));
+  void showMessage(String message) {
+    _scaffoldKey.currentState.showSnackBar(
+        SnackBar(backgroundColor: Colors.green, content: Text(message)));
   }
-  void showError(String error)
-  {
-    _scaffoldKey.currentState.showSnackBar(SnackBar(backgroundColor: Colors.red, content: Text(error)));
+
+  void showError(String error) {
+    _scaffoldKey.currentState.showSnackBar(
+        SnackBar(backgroundColor: Colors.red, content: Text(error)));
   }
+
+  void clearApiKey() {
+    widget.keyController.clear();
+    var model = AppDataProvider.of(context).model;
+    model.apiCredentials.apiKey = widget.keyController.text;
+  }
+
+  void clearSecret() {
+    widget.secretController.clear();
+    var model = AppDataProvider.of(context).model;
+    model.apiCredentials.secret = widget.secretController.text;
+  }
+
   void readApiKey() async {
     var model = AppDataProvider.of(context).model;
 
@@ -59,13 +90,59 @@ class _SettingsViewState extends State<SettingsView> {
     }
   }
 
-  void save() async {
-    print("In save");
-
+  void setApiKey() {
     var model = AppDataProvider.of(context).model;
 
+    var key = widget.keyController.text;
+    //print("key editing completed $key");
+    model.apiCredentials.apiKey = key;
+  }
+
+  void setSecret() {
+    var model = AppDataProvider.of(context).model;
+
+    var secret = widget.secretController.text;
+    //print("secret editing completed $secret");
+    model.apiCredentials.secret = secret;
+  }
+
+  void setPassword() {
+    var pass = widget.password1Controller.text;
+    widget.passwordData.password = pass;
+    //print("password changed $pass");
+  }
+
+  void setConfirmPassword() {
+    var pass = widget.password2Controller.text;
+    widget.passwordData.confirmPassword = pass;
+    //print("Conform password changed $pass");
+  }
+
+  final _formKey = GlobalKey<FormState>();
+
+  void cancelTask() {
+    Navigator.of(context).pop();
+  }
+
+  void checkPassword() async {
+    if (_formKey.currentState.validate()) {
+      var password = widget.password1Controller.text;
+
+      Navigator.of(context).pop(password);
+    }
+  }
+
+  void save() async {
+   // print("In save");
+
+    widget.passwordData.password = null;
+    widget.passwordData.confirmPassword = null;
+
+    var model = AppDataProvider.of(context).model;
     var apiKey = model.apiCredentials.apiKey;
     var secret = model.apiCredentials.secret;
+
+   // print("In Save Api Key $apiKey Secret $secret");
 
     var isValidData = apiKey != null &&
         apiKey.isNotEmpty &&
@@ -73,37 +150,64 @@ class _SettingsViewState extends State<SettingsView> {
         secret.isNotEmpty &&
         apiKey.length >= 10 &&
         secret.length >= 10;
-   // print("isValidData $isValidData");
-    if (isValidData) {
-     // print("checking auth....");
-      var isValidAuth = await model.checkAuthentication(apiKey, secret);
-      if (!isValidAuth) {
-        showError("Invalid api credentails.");
-        return;
-      } else {
-        print("Has Credentials changes ${model.hasCredentialsChanged}");
-        print(model.currentCredentials.apiKey);
-        print(model.currentCredentials.secret);
-        if (model.hasCredentialsChanged) {
 
-           var password = await Navigator.of(context).push(new MaterialPageRoute<String>(
-        builder: (BuildContext context) {
-          return new SetPasswordView();
-        },
-        fullscreenDialog: true));
-          var result = await model.updateCredentials(password);
-          if (!result) {
-              showError("Something went wrong while updating credentials. Please try again");
-            return;
+    var currentCredentials = model.currentCredentials;
+    var isSame = currentCredentials.apiKey != null &&
+        currentCredentials.secret != null &&
+        currentCredentials.apiKey == apiKey &&
+        currentCredentials.secret == secret;
+
+    //print("in save areValida $isValidData and are same $isSame");
+
+    if (!isSame) {
+      //print("checking auth....");
+
+      if (isValidData) {
+        var isValidAuth = await model.checkAuthentication(apiKey, secret);
+        if (!isValidAuth) {
+          showError("Invalid api credentails.");
+          return;
+        } else {
+          //print("Has Credentials changes ${model.hasCredentialsChanged}");
+          //print(model.currentCredentials.apiKey);
+          //print(model.currentCredentials.secret);
+          if (model.hasCredentialsChanged) {
+            await AppDataProvider.of(context)
+                .showPopup<String>(_getSetPassword(), title: "Set Password");
+            var password = widget.passwordData.password;
+            //print("in Save got password $password");
+            if (password == null || password.isEmpty) {
+              print("No password provided, skipping updating");
+              return;
+            }
+            var result = await model.updateCredentials(password);
+            if (!result) {
+              showError(
+                  "Something went wrong while updating credentials. Please try again");
+              return;
+            }
+
+            //showMessage("Saved settings successfully");
           }
-
-          showMessage("Saved settings successfully");
         }
+      }
+      else
+      {
+          if(model.currentCredentials.isValid)
+          {
+           //   print("Resetting credentials");
+              model.resetCredentails();
+              
+              model.refreshMarkets();
+          }
       }
     }
 
     await model.saveSettings();
-    // model.showMessage("Saved settings successfully.");
+    AppDataProvider.of(context).showMessage(AppMessage(
+        message: "Saved settings successfully.",
+        messageType: MessageType.success,
+        isModal: true));
   }
 
   @override
@@ -114,12 +218,12 @@ class _SettingsViewState extends State<SettingsView> {
     var hintText = TextStyle(color: hintColor);
     var clearColor = Colors.red;
 
-   // print("building settings agains");
+    // print("building settings agains");
     var model = AppDataProvider.of(context).model;
 
     widget.keyController.text = model.apiCredentials.apiKey;
     widget.secretController.text = model.apiCredentials.secret;
-  
+
     return new Scaffold(
         key: _scaffoldKey,
         appBar: new AppBar(title: Text("Settings")),
@@ -163,7 +267,6 @@ class _SettingsViewState extends State<SettingsView> {
                                               style: hintText)
                                         ],
                                       ),
-                                     
                                       Padding(
                                           padding:
                                               EdgeInsets.symmetric(vertical: 5),
@@ -179,6 +282,11 @@ class _SettingsViewState extends State<SettingsView> {
                                             autocorrect: false,
                                             controller: widget.keyController,
                                             maxLength: 100,
+                                            onChanged: (value) {
+                                              print("Changed apikey $value");
+                                              model.apiCredentials.apiKey =
+                                                  value;
+                                            },
                                             decoration: InputDecoration(
                                               contentPadding:
                                                   EdgeInsets.all(12),
@@ -189,8 +297,7 @@ class _SettingsViewState extends State<SettingsView> {
                                                     color: clearColor,
                                                   ),
                                                   onPressed: () {
-                                                    widget.keyController
-                                                        .clear();
+                                                    clearApiKey();
                                                   }),
                                               suffixIcon: IconButton(
                                                   icon: Icon(
@@ -224,6 +331,11 @@ class _SettingsViewState extends State<SettingsView> {
                                               child: TextField(
                                             autocorrect: false,
                                             controller: widget.secretController,
+                                            onChanged: (value) {
+                                              print("Changed secret $value");
+                                              model.apiCredentials.secret =
+                                                  value;
+                                            },
                                             maxLength: 100,
                                             decoration: InputDecoration(
                                               contentPadding:
@@ -233,8 +345,7 @@ class _SettingsViewState extends State<SettingsView> {
                                                   icon: Icon(Icons.clear,
                                                       color: clearColor),
                                                   onPressed: () {
-                                                    widget.secretController
-                                                        .clear();
+                                                    clearSecret();
                                                   }),
                                               suffixIcon: IconButton(
                                                   icon: Icon(
@@ -340,5 +451,123 @@ class _SettingsViewState extends State<SettingsView> {
       },
       value: model.settings.theme,
     );
+  }
+
+  Widget _getSetPassword() {
+    var hintColor = Theme.of(context).hintColor;
+    var hintStyle = Theme.of(context).textTheme.subhead.copyWith(
+          color: hintColor,
+        );
+
+    return 
+    SingleChildScrollView(child:
+    Container(
+        padding: EdgeInsets.all(10),
+        child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Form(
+                  key: _formKey,
+                  child: Column(
+                    children: <Widget>[
+                      Align(
+                          alignment: Alignment.topLeft,
+                          child: Text(
+                            "Set Password",
+                            style: hintStyle,
+                          )),
+                      SizedBox(height: 5),
+                      TextFormField(
+                        controller: widget.password1Controller,
+                        maxLength: 15,
+                        obscureText: true,
+                        initialValue: widget.passwordData.password,
+                        decoration: InputDecoration(
+                           contentPadding:
+                                                  EdgeInsets.all(12),
+                            hintText: "Enter password",
+                            suffixIcon: IconButton(
+                                icon: Icon(Icons.cancel, color: Colors.red),
+                                onPressed: () {
+                                  widget.password1Controller.clear();
+                                  _formKey.currentState.reset();
+                                }),
+                            border: OutlineInputBorder(
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(8)))),
+                        validator: (value) {
+                          if (value.isEmpty) {
+                            return "Password is required";
+                          }
+                          if (value.length < 8) {
+                            return "Password must be atleast 8 characters";
+                          }
+                          widget.passwordData.password = value;
+                          return null;
+                        },
+                      ),
+                    
+                      Align(
+                          alignment: Alignment.topLeft,
+                          child: Text(
+                            "Confirm Password",
+                            style: hintStyle,
+                          )),
+                    
+                      TextFormField(
+                        controller: widget.password2Controller,
+                        maxLength: 15,
+                        initialValue: widget.passwordData.confirmPassword,
+                        obscureText: true,
+                        decoration: InputDecoration(
+                             contentPadding:
+                                                  EdgeInsets.all(12),
+                            hintText: "Reenter password",
+                            suffixIcon: IconButton(
+                                icon: Icon(Icons.cancel, color: Colors.red),
+                                onPressed: () {
+                                  widget.password2Controller.clear();
+                                  _formKey.currentState.reset();
+                                }),
+                            border: OutlineInputBorder(
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(8)))),
+                        validator: (value) {
+                          if (value.isEmpty) {
+                            return "Password is required";
+                          }
+                          //print(
+                            //  "Checking same ,$value, ${widget.passwordData.password} ,");
+                          if (value != widget.passwordData.password) {
+                            return "Confirm password must be same as Password";
+                          }
+                          widget.passwordData.confirmPassword = value;
+                          return null;
+                        },
+                      )
+                    ],
+                  )),
+             
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: <Widget>[
+                  RaisedButton(
+                    child: Text("Cancel"),
+                    onPressed: () {
+                      // checkPassword();
+                      cancelTask();
+                    },
+                  ),
+                  RaisedButton(
+                    child: Text("Save"),
+                    onPressed: () {
+                      checkPassword();
+                    },
+                  )
+                ],
+              )
+            ]))
+            );
   }
 }
