@@ -65,7 +65,7 @@ class AppDataProvider extends InheritedWidget {
      var context = appDataContext.context;
        var result = await showGeneralDialog<T>(
           context: context,
-            barrierColor: Colors.grey.withOpacity(0.5),
+            barrierColor: Colors.black54.withOpacity(0.5),
           barrierDismissible: !(isModal??false),
           barrierLabel: "", 
           transitionDuration: Duration(milliseconds: 200),                 
@@ -90,7 +90,7 @@ class AppDataProvider extends InheritedWidget {
                   children:[
                     
                     Container(
-                      padding: EdgeInsets.all(5),
+                      padding: EdgeInsets.all(10),
                       
                       decoration: BoxDecoration(
                         color:Theme.of(context).primaryColor,
@@ -196,7 +196,9 @@ class AppDataProvider extends InheritedWidget {
                       children: <Widget>[
                       RaisedButton(child: Text("Ok"), onPressed: (){
                     Navigator.of(context).pop();
-                  },)
+                  },
+                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                   )
                   ],)
                   ]
 

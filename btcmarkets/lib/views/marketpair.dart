@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:btcmarkets/models/marketdata.dart';
 import 'package:btcmarkets/providers/appdataprovider.dart';
+import 'package:btcmarkets/viewmodels/appdatamodel.dart';
 
 import 'package:flutter/material.dart';
 
@@ -59,7 +60,7 @@ class _MarketPairState extends State<MarketPair> with AutomaticKeepAliveClientMi
       _isFavourite = !_isFavourite;
       _favouriteIcon = _isFavourite?Icons.favorite:Icons.favorite_border;
 
-       var model = AppDataProvider.of(context).model;
+       var model = AppDataModel();
        model.updateFavourite(_market, _isFavourite);
     });
   }

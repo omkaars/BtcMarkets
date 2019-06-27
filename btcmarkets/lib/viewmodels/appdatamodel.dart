@@ -15,7 +15,6 @@ import 'package:btcmarkets/models/walletorder.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:html/parser.dart' show parse;
-import 'package:html/dom.dart';
 
 import '../api/btcmarketsapi.dart';
 import '../constants.dart';
@@ -23,6 +22,15 @@ import '../models/marketdata.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppDataModel {
+
+  static final AppDataModel _model = new AppDataModel._internal();
+
+  factory AppDataModel() {
+    return _model;
+  }
+
+  
+
   BtcMarketsApi _api;
 
   final ApiCredentials apiCredentials = new ApiCredentials();
@@ -61,6 +69,10 @@ class AppDataModel {
   final StreamController<AppMessage> _messageNotifier =
       StreamController<AppMessage>.broadcast();
 
+
+  final StreamController<String> _accountRefreshController =
+      StreamController<String>.broadcast();
+
   final StreamController<String> _marketsRefreshController =
       StreamController<String>.broadcast();
 
@@ -97,20 +109,25 @@ class AppDataModel {
   StreamSink<String> get settingsSink => _settingsController.sink;
   Stream<String> get settingsStream => _settingsController.stream;
 
+
+  StreamSink<String> get accountSink => _accountRefreshController.sink;
+  Stream<String> get accountStream => _accountRefreshController.stream;
+
   NavView view;
 
-  AppDataModel() {
+  AppDataModel._internal()  {
     _api = new BtcMarketsApi();
 
     var navView = NavView();
     navView.view = View.Home;
     navView.subView = SubView.None;
     view = navView;
+  
     loadSettings();
   }
 
   bool get isValidAccount {
-    return apiCredentials.isValid;
+    return settings.credentials != null && settings.credentials.isNotEmpty && currentCredentials.isValid;
   }
 
   void switchView(NavView nav) {
@@ -123,8 +140,11 @@ class AppDataModel {
     settingsSink.add("themeChanged");
   }
 
-  void refreshApp() {
+  void refreshApp() async {
+    //refreshMarkets();
+    await refreshMarkets();
     settingsSink.add("");
+    accountSink.add("");
   }
 
   bool get hasCredentialsChanged
@@ -150,6 +170,7 @@ class AppDataModel {
 
   Future loadSettings() async {
     try {
+      isAppLocked = false;
       final prefs = await SharedPreferences.getInstance();
 
       settings.credentials = "";
@@ -164,7 +185,7 @@ class AppDataModel {
         var data = json.decode(settingsJson);
         //print("Settings data from json $data");
         if (data != null) {
-          var credentials = data["credentials"];
+         
           //print("Data not null ${credentials}");
           var theme = data["theme"];
           if (theme == null || theme.isEmpty) {
@@ -182,6 +203,7 @@ class AppDataModel {
      // showError("Something went wrong while loading settings");
      print(e);
     }
+    isAppLocked = settings.credentials != null && settings.credentials.isNotEmpty;
      settingsSink.add("Refresh");
   }
 
@@ -206,6 +228,7 @@ class AppDataModel {
         apiCredentials.apiKey = apiKey;
         apiCredentials.secret = secret;
         _api.updateCredentials(apiCredentials.apiKey, apiCredentials.secret);
+        isAppLocked = false;
         return true;
       } catch (cryptoError) {
         print(cryptoError);
@@ -219,15 +242,35 @@ class AppDataModel {
   }
 
   ApiCredentials get currentCredentials => ApiCredentials(apiKey: _api.apiKey, secret: _api.secret);
- // bool passwordRequired = true;
-  bool get passwordRequired =>
-   settings.credentials != null && settings.credentials.isNotEmpty && !currentCredentials.isValid;
 
-  void resetCredentails()
+  bool isAppLocked = false;
+ // bool passwordRequired = true;
+  bool get passwordRequired => isAppLocked;
+  bool get canLockApp => settings.credentials != null && settings.credentials.isNotEmpty;
+
+// && settings.credentials.isNotEmpty && !currentCredentials.isValid
+  void resetCredentails() async
   {
+    apiCredentials.apiKey = null;
+    apiCredentials.secret = null;
+
     _api.updateCredentials("", "");
     settings.credentials = "";
     saveSettings();
+    isAppLocked = false;
+    
+    await refreshMarkets();
+    
+    
+    refreshApp();
+    accountSink.add("");
+    
+  }
+
+  void lockApp()
+  {
+    isAppLocked = true;
+    settingsSink.add("");
   }
 
   Future<bool> updateCredentials(String password) async {
@@ -297,12 +340,18 @@ class AppDataModel {
 
       var data = await _api.getMarkets(activeMarkets: activeMarkets);
 
+    //  print("isValidAccount $isValidAccount");
+ balances.clear();
       if (isValidAccount) {
         try {
+          print("Refreshing balances");
+          
           await refreshBalances();
         } catch (e) {}
       }
+   
 
+ print("Balances ${balances.length}");
       for (Market market in data.markets) {
         MarketData marketData = MarketData();
         marketData.currency = market.currency;
@@ -329,6 +378,25 @@ class AppDataModel {
           marketData.group = Constants.Favourites;
         }
 
+          try {
+         //   print(marketData.currency);
+          if (marketData.currency == Constants.AUD) {
+        //    print("Getting market history");
+            var history = await getMarketHistory(marketData, "1D", limit: 1);
+            
+            if (history.data.isNotEmpty) {
+              var tick = history.data[0];
+
+           //     print(tick);
+              marketData.prevPrice = tick["open"];
+              //   print("${marketData.pair}, ${marketData.lastPrice},${marketData.prevPrice},${marketData.change},${marketData.changeString}");
+              //   print(marketData.changeString);
+            }
+          }
+        } catch (e) {
+          print(e);
+        }
+       
         try {
           if (balances.isNotEmpty) {
             var balance = balances
@@ -338,24 +406,15 @@ class AppDataModel {
               marketData.holdings = balance.pending + balance.balance;
             }
           }
-        } catch (e) {
-          print(e);
-        }
-
-        try {
-          if (marketData.currency == Constants.AUD) {
-            var history = await getMarketHistory(marketData, "1D", limit: 1);
-            if (history.data.isNotEmpty) {
-              var tick = history.data[0];
-              //  print(tick);
-              marketData.prevPrice = tick["open"];
-              //   print("${marketData.pair}, ${marketData.lastPrice},${marketData.prevPrice},${marketData.change},${marketData.changeString}");
-              //   print(marketData.changeString);
-            }
+          else
+          {
+            marketData.holdings = 0.0;
           }
         } catch (e) {
           print(e);
         }
+
+      
         markets.add(marketData);
       }
     } catch (e) {
@@ -509,6 +568,8 @@ class AppDataModel {
     } catch (e) {
       showError(null);
     }
+
+   
   }
 
   Future<List<WalletCurrency>> getWalletBalances({bool hideZeroBalance}) async {
@@ -750,11 +811,14 @@ class AppDataModel {
       var history = await _api.getHistoricalTicks(
           market.instrument, market.currency, tickTime, dateTime, true,
           limit: limit);
+      
+    //  print("Market history ${history.success}");
       if (history.success) {
+
         var ticks = history.ticks;
         marketHistory.refresh(ticks);
       } else {
-        // print(history.errorMessage);
+        print(history.errorMessage);
 
         marketHistory.refresh([]);
       }
@@ -957,5 +1021,6 @@ class AppDataModel {
     _navController.close();
     _pageLoading.close();
     _messageNotifier.close();
+    _accountRefreshController.close();
   }
 }

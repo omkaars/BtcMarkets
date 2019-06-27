@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:btcmarkets/models/marketdata.dart';
 import 'package:btcmarkets/models/walletcurrency.dart';
 import 'package:btcmarkets/models/walletfundtransfer.dart';
 import 'package:btcmarkets/models/walletorder.dart';
 import 'package:btcmarkets/providers/appdataprovider.dart';
+import 'package:btcmarkets/viewmodels/appdatamodel.dart';
 import 'package:btcmarkets/views/marketdetail.dart';
 import 'package:flutter/material.dart';
 import '../constants.dart';
@@ -22,11 +25,36 @@ class _FundsHistoryViewState extends State<FundsHistoryView>
 
   @override
   bool get wantKeepAlive => true;
+StreamSubscription _accountStream;
+  @override 
+  void initState()
+  {
+    super.initState();
+    var model = AppDataModel();
+    if(_accountStream != null)
+    {
+      _accountStream.cancel();
+    }
 
+    _accountStream = model.accountStream.listen((data){
+      setState((){});
+    });
+
+  }
+
+  @override
+  void dispose()
+  {
+    super.dispose();
+    if(_accountStream != null)
+    {
+    _accountStream.cancel();
+    }
+  }
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
 
     var accentColor = Theme.of(context).accentColor;
     var defaultTextStyle = Theme.of(context).textTheme.body1;

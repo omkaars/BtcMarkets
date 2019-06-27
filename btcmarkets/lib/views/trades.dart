@@ -1,5 +1,6 @@
 import 'package:btcmarkets/models/markettrades.dart';
 import 'package:btcmarkets/providers/appdataprovider.dart';
+import 'package:btcmarkets/viewmodels/appdatamodel.dart';
 import 'package:flutter/material.dart';
 import 'apppopupmenu.dart';
 import 'navdrawar.dart';
@@ -23,7 +24,7 @@ class _TradesViewState extends State<TradesView> {
   String currency = "AUD";
   @override
   Widget build(BuildContext context) {
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
 
     return new Scaffold(
         drawer: _navDrawer,
@@ -35,7 +36,7 @@ class _TradesViewState extends State<TradesView> {
   }
 
   Widget getTradesView() {
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
 
     return FutureBuilder(
       //stream: model.tradesRefreshStream,

@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:btcmarkets/api/btcmarketsapi.dart';
+import 'package:btcmarkets/providers/appdataprovider.dart';
 import 'package:btcmarkets/views/fundshistory.dart';
 import 'package:btcmarkets/views/openorders.dart';
 import 'package:btcmarkets/views/walletbalances.dart';
@@ -12,7 +15,7 @@ class AccountView extends StatefulWidget {
   AccountView({Key key, this.title}) : super(key: key);
 
   final String title;
-
+  
   @override
   _AccountViewState createState() => _AccountViewState();
 }
@@ -23,12 +26,13 @@ class _AccountViewState extends State<AccountView> {
   AppPopupMenu _popupMenu = new AppPopupMenu();
   int _selectedIndex = 0;
 
+ 
   _AccountViewState();
 
   @override
   Widget build(BuildContext context) {
 
-    return  DefaultTabController(
+    return DefaultTabController(
       initialIndex: _selectedIndex,
       length: 4,
       child:  Scaffold(
@@ -58,6 +62,6 @@ class _AccountViewState extends State<AccountView> {
        ),
 
     );
-
+ 
   }
 }

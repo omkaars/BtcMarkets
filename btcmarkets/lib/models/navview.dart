@@ -7,7 +7,8 @@ enum View
   Account,
   News,
   Settings,
-  About
+  About,
+  Lock
 
 }
 enum SubView

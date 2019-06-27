@@ -1,5 +1,6 @@
 import 'package:btcmarkets/models/newsitem.dart';
 import 'package:btcmarkets/providers/appdataprovider.dart';
+import 'package:btcmarkets/viewmodels/appdatamodel.dart';
 import 'package:btcmarkets/views/marketwebview.dart';
 import 'package:flutter/material.dart';
 import 'apppopupmenu.dart';
@@ -22,7 +23,7 @@ AppPopupMenu _popupMenu = new AppPopupMenu();
 
   @override
   Widget build(BuildContext context) {
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
 
     return new Scaffold(
         drawer: _navDrawer,

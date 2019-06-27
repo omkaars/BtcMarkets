@@ -1,5 +1,6 @@
 import 'package:btcmarkets/models/marketdata.dart';
 import 'package:btcmarkets/providers/appdataprovider.dart';
+import 'package:btcmarkets/viewmodels/appdatamodel.dart';
 import 'package:btcmarkets/views/marketdetail.dart';
 import 'package:flutter/material.dart';
 import '../constants.dart';
@@ -23,8 +24,7 @@ class _MarketListState extends State<MarketList>
   }
 
   Future<Null> _onRefresh() async {
-    await AppDataProvider.of(context)
-        .model
+   AppDataModel()
         .refreshMarkets(isPullToRefesh: true);
     return null;
   }
@@ -32,13 +32,13 @@ class _MarketListState extends State<MarketList>
   void setFavourite(MarketData market) {
     setState(() {
       market.isStarred = !market.isStarred;
-      var model = AppDataProvider.of(context).model;
+      var model = AppDataModel();
       model.updateFavourite(market, market.isStarred);
     });
   }
 
   void showMarketDetail(MarketData market) async {
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
     // await model.refreshMarketHistory(market, "1D");
     var marketDetail = new MarketDetailView(market: market);
     Navigator.push(
@@ -46,7 +46,7 @@ class _MarketListState extends State<MarketList>
   }
 
   Widget _buildUI() {
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
 
     //debugPrint("Calling buildUI");
 
@@ -236,7 +236,7 @@ class _MarketListState extends State<MarketList>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
     return new StreamBuilder(
       stream: model.marketsRefreshStream,
       initialData: [],

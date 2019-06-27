@@ -6,6 +6,7 @@ import 'package:btcmarkets/helpers/uihelpers.dart';
 import 'package:btcmarkets/models/marketdata.dart';
 import 'package:btcmarkets/models/markethistory.dart';
 import 'package:btcmarkets/providers/appdataprovider.dart';
+import 'package:btcmarkets/viewmodels/appdatamodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_candlesticks/flutter_candlesticks.dart';
@@ -28,7 +29,7 @@ class _MarketDetailState extends State<MarketDetailView> {
   var duration="1D";
   void refreshHistory(String dur) async {
     duration = dur;
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
     await model.refreshMarketHistory(widget.market, duration);
 
 
@@ -50,7 +51,7 @@ class _MarketDetailState extends State<MarketDetailView> {
 
   @override
   Widget build(BuildContext context) {
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
 
     //  _loadHistory();
 

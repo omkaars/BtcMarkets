@@ -1,5 +1,6 @@
 import 'package:btcmarkets/models/navview.dart';
 import 'package:btcmarkets/providers/appdataprovider.dart';
+import 'package:btcmarkets/viewmodels/appdatamodel.dart';
 import 'package:flutter/material.dart';
 import '../constants.dart';
 import 'apppopupmenu.dart';
@@ -21,7 +22,7 @@ class _MarketsViewState extends State<MarketsView> {
 
   @override
   Widget build(BuildContext context) {
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
  
     if (model.markets.length <= 0) {
       model.refreshMarkets();

@@ -1,5 +1,6 @@
 import 'package:btcmarkets/models/navview.dart';
 import 'package:btcmarkets/providers/appdataprovider.dart';
+import 'package:btcmarkets/viewmodels/appdatamodel.dart';
 import 'package:btcmarkets/views/wallettotalbalance.dart';
 import 'package:flutter/material.dart';
 
@@ -18,7 +19,7 @@ class _NavDrawerState extends State<NavDrawer> {
     var nav = new NavView();
     nav.view = view;
     nav.subView = subView;
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
     model.switchView(nav);
 
     Navigator.of(context).pop();
@@ -26,7 +27,7 @@ class _NavDrawerState extends State<NavDrawer> {
 
   @override
   Widget build(BuildContext context) {
-     var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
     _hasValidAccount = model.isValidAccount;
     return new Drawer(
         child: new ListView(
@@ -36,16 +37,17 @@ class _NavDrawerState extends State<NavDrawer> {
           height: 150,
           child: new DrawerHeader(
             child: InkWell(
-                    onTap: () {
-                      setState(() {
-                        _totalInBtc = !_totalInBtc;
-                      });
-                    },
-                    child:Container(
-                          padding: EdgeInsets.symmetric(vertical: 10),
-                          alignment: Alignment.center,
-                          child: WalletTotalBalanceView(inBtc: _totalInBtc,)
-                        )),
+                onTap: () {
+                  setState(() {
+                    _totalInBtc = !_totalInBtc;
+                  });
+                },
+                child: Container(
+                    padding: EdgeInsets.symmetric(vertical: 10),
+                    alignment: Alignment.center,
+                    child: WalletTotalBalanceView(
+                      inBtc: _totalInBtc,
+                    ))),
             decoration: new BoxDecoration(color: Theme.of(context).accentColor),
             // margin: EdgeInsets.all(0.0),
             //padding: EdgeInsets.all(0.0),
@@ -132,6 +134,16 @@ class _NavDrawerState extends State<NavDrawer> {
             leading: Icon(Icons.settings),
             title: Text('Settings'),
             onTap: () => _onSelectMenu(View.Settings, SubView.None)),
+        new Divider(height: 1),
+        ListTile(
+            leading: Icon(Icons.lock),
+            enabled: model.canLockApp,
+            title: Text('Lock'),
+            onTap: () {
+              var model = AppDataModel();
+              model.lockApp();
+              return;
+            }),
         new Divider(height: 1),
         ListTile(
             leading: Icon(Icons.info),

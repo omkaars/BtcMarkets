@@ -1,5 +1,7 @@
+import 'package:btcmarkets/helpers/uihelpers.dart';
 import 'package:btcmarkets/models/appmessage.dart';
 import 'package:btcmarkets/providers/appdataprovider.dart';
+import 'package:btcmarkets/viewmodels/appdatamodel.dart';
 import 'package:btcmarkets/views/setpassword.dart';
 import 'package:flutter/material.dart';
 import 'package:web_socket_channel/status.dart';
@@ -26,7 +28,7 @@ class _PasswordViewState extends State<PasswordView> {
 
     if (_formKey.currentState.validate()) {
       var password = widget.passwordController.text;
-      var model = AppDataProvider.of(context).model;
+      var model = AppDataModel();
 
       var result = await model.loadCredentials(password);
     
@@ -34,10 +36,7 @@ class _PasswordViewState extends State<PasswordView> {
        // model.passwordRequired = false;
         model.refreshApp();
       } else {
-        _scaffoldKey.currentState.showSnackBar(SnackBar(
-          backgroundColor: Colors.red,
-          content: Text("Invalid password. Please try again."),
-        ));
+      //
 
        // AppDataProvider.of(_scaffoldKey.currentContext).showMessage(AppMessage(message:"Invalid password. Please try again.", messageType: MessageType.error));
       }
@@ -47,7 +46,7 @@ class _PasswordViewState extends State<PasswordView> {
   void resetLock()
   {
     clearPassword();
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
     model.resetCredentails();
     model.refreshApp();
   }
@@ -61,19 +60,29 @@ class _PasswordViewState extends State<PasswordView> {
 
   @override
   Widget build(BuildContext context) {
+
+    var backColor = Theme.of(context).backgroundColor;
     return new Scaffold(
         key: _scaffoldKey,
         body: Center(
-            child: Container(
-                padding: EdgeInsets.all(10),
-                child: Column(
+            
+            child:Container(
+        
+child: 
+           
+                Padding(padding: EdgeInsets.fromLTRB(20, 30, 20, 30),
+            child:
+                Column(
+                  
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      Text("Enter password to unlock"),
-                      SizedBox(
-                        height: 10,
-                      ),
+                     
+                      // Text("Enter password to unlock"),
+                      // SizedBox(
+                      //   height: 10,
+                      // ),
                       Form(
                           key: _formKey,
                           child: TextFormField(
@@ -85,7 +94,7 @@ class _PasswordViewState extends State<PasswordView> {
                             decoration: InputDecoration(
                                 contentPadding:
                                                   EdgeInsets.all(12),
-                                hintText: "Enter password",
+                                hintText: "Enter unlock password",
                                 suffixIcon: IconButton(
                                     icon: Icon(Icons.cancel, color: Colors.red),
                                     onPressed: () {
@@ -110,15 +119,16 @@ class _PasswordViewState extends State<PasswordView> {
                         height: 10,
                       ),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: <Widget>[
                       
                       RaisedButton(
-                        color: Colors.red,
+                        color: Colors.red.shade500,
                         child: Text("Reset Lock"),
                         onPressed: () {
                          resetLock();
                         },
+                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                       ),
                       RaisedButton(
                         color: Theme.of(context).primaryColor,
@@ -127,10 +137,14 @@ class _PasswordViewState extends State<PasswordView> {
                           
                            checkPassword();
                         },
+                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                       )
 
 
                       ],)
-                    ]))));
+                    ]))
+                    ,)
+                    )
+                                       );
   }
 }

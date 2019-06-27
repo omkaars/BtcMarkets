@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:btcmarkets/helpers/markethelper.dart';
 import 'package:btcmarkets/models/marketdata.dart';
 import 'package:btcmarkets/models/walletcurrency.dart';
 import 'package:btcmarkets/providers/appdataprovider.dart';
+import 'package:btcmarkets/viewmodels/appdatamodel.dart';
 import 'package:btcmarkets/views/marketdetail.dart';
 import 'package:flutter/material.dart';
 import '../constants.dart';
@@ -19,6 +22,8 @@ class _WalletBalancesViewState extends State<WalletBalancesView>
     with AutomaticKeepAliveClientMixin<WalletBalancesView> {
   _WalletBalancesViewState();
 
+  StreamSubscription _accountStrem;
+
   @override
   bool get wantKeepAlive => true;
 
@@ -27,7 +32,7 @@ class _WalletBalancesViewState extends State<WalletBalancesView>
   bool _hideZeroBalance = false;
 
   Future<List<WalletCurrency>> _getBalances(bool refresh) async {
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
 
     if (_balances.isEmpty || refresh) {
       if (refresh && _balances.isNotEmpty) {
@@ -43,11 +48,37 @@ class _WalletBalancesViewState extends State<WalletBalancesView>
     return _balances;
   }
 
+  StreamSubscription _accountStream;
+  @override 
+  void initState()
+  {
+    super.initState();
+    var model = AppDataModel();
+    if(_accountStream != null)
+    {
+      _accountStream.cancel();
+    }
+
+    _accountStream = model.accountStream.listen((data){
+      setState((){});
+    });
+
+  }
+
+  @override
+  void dispose()
+  {
+    super.dispose();
+    if(_accountStream != null)
+    {
+    _accountStream.cancel();
+    }
+  }
   @override
   Widget build(BuildContext context) {
     super.build(context);
 
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
 
     var accentColor = Theme.of(context).accentColor;
     var defaultTextStyle = Theme.of(context).textTheme.body1;
@@ -189,20 +220,20 @@ class _WalletBalancesViewState extends State<WalletBalancesView>
                                   // )
                                 ),
                                 Expanded(
-                                    flex: 3,
+                                    flex: 3,  
                                     child: Align(
                                         alignment: Alignment.topRight,
                                         child: 
                                         RichText(text: TextSpan(children: [
                                           TextSpan(text: MarketHelper.getSymbol(balance.currency), style:TextStyle(color:hintColor)),
-                                          TextSpan(text:balance.balanceString)
+                                          TextSpan(text:balance.balanceString, style:defaultTextStyle)
                                         ]),)
                                         )),
                                 Expanded(
                                     flex: 3,
                                     child: Align(
                                         alignment: Alignment.topRight,
-                                        child: Text(balance.pendingString)))
+                                        child: Text(balance.pendingString, style:defaultTextStyle)))
                               ],
                             ));
                       },
@@ -214,4 +245,6 @@ class _WalletBalancesViewState extends State<WalletBalancesView>
           return widget;
         });
   }
+
+  
 }

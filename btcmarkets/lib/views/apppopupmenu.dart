@@ -1,4 +1,6 @@
 import 'package:btcmarkets/models/popupchoice.dart';
+import 'package:btcmarkets/providers/appdataprovider.dart';
+import 'package:btcmarkets/viewmodels/appdatamodel.dart';
 import 'package:btcmarkets/views/settings.dart';
 import 'package:flutter/material.dart';
 
@@ -26,6 +28,13 @@ class _AppPopupMenuState extends State<AppPopupMenu> {
         }));
         return;
         }
+        else
+        if(choice.title == "Lock")
+        {
+            var model = AppDataModel();
+            model.lockApp();
+            return;
+        }
         Navigator.push(context,
             MaterialPageRoute(builder: (BuildContext buildContext) {
           return SettingsView();
@@ -33,10 +42,19 @@ class _AppPopupMenuState extends State<AppPopupMenu> {
       },
       icon: Icon(Icons.more_vert),
       itemBuilder: (BuildContext buildContext) {
-        var choices = [
-          new PopupChoice(title: "Settings", icon: Icons.settings),
-          new PopupChoice(title: "About", icon: Icons.info)
-        ];
+
+        var model = AppDataModel();
+        var choices = List<PopupChoice>();
+        choices.add(
+          new PopupChoice(title: "Settings", icon: Icons.settings));
+        
+        if(model.canLockApp)
+        {
+          choices.add(new PopupChoice(title: "Lock", icon: Icons.lock),
+         );
+        }
+        choices.add(new PopupChoice(title: "About", icon: Icons.info));
+
         return choices.map((PopupChoice choice) {
           return PopupMenuItem<PopupChoice>(
               child: Text(choice.title), value: choice);

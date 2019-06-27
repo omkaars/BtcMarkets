@@ -1,6 +1,7 @@
 import 'package:btcmarkets/helpers/markethelper.dart';
 import 'package:btcmarkets/models/popupchoice.dart';
 import 'package:btcmarkets/providers/appdataprovider.dart';
+import 'package:btcmarkets/viewmodels/appdatamodel.dart';
 import 'package:btcmarkets/views/apppopupmenu.dart';
 import 'package:btcmarkets/views/settings.dart';
 import 'package:btcmarkets/views/wallettotalbalance.dart';
@@ -34,15 +35,13 @@ class _HomeViewState extends State<HomeView> {
   }
 
   Future<Null> _onRefresh() async {
-    await AppDataProvider.of(context)
-        .model
-        .refreshMarkets(isPullToRefesh: true);
+    AppDataModel().refreshMarkets(isPullToRefesh: true);
     return null;
   }
 
   @override
   Widget build(BuildContext context) {
-      var model = AppDataProvider.of(context).model;
+      var model = AppDataModel();
     
     
     return new Scaffold(

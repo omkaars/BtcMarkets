@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:btcmarkets/models/marketdata.dart';
 import 'package:btcmarkets/models/walletcurrency.dart';
 import 'package:btcmarkets/models/walletorder.dart';
 import 'package:btcmarkets/providers/appdataprovider.dart';
+import 'package:btcmarkets/viewmodels/appdatamodel.dart';
 import 'package:btcmarkets/views/marketdetail.dart';
 import 'package:flutter/material.dart';
 import '../constants.dart';
@@ -24,10 +27,36 @@ class _OrderHistoryViewState extends State<OrderHistoryView>
 
   bool _hideZeroBalance = false;
 
+StreamSubscription _accountStream;
+  @override 
+  void initState()
+  {
+    super.initState();
+    var model = AppDataModel();
+    if(_accountStream != null)
+    {
+      _accountStream.cancel();
+    }
+
+    _accountStream = model.accountStream.listen((data){
+      setState((){});
+    });
+
+  }
+
+  @override
+  void dispose()
+  {
+    super.dispose();
+    if(_accountStream != null)
+    {
+    _accountStream.cancel();
+    }
+  }
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
 
     var accentColor = Theme.of(context).accentColor;
     var defaultTextStyle = Theme.of(context).textTheme.body1;
@@ -58,7 +87,7 @@ class _OrderHistoryViewState extends State<OrderHistoryView>
     var headerTextStyle = TextStyle(fontSize: headerStyle.fontSize);
     var headerLabelStyle = TextStyle(color: hintColor);
 var typeStyle = headerTextStyle;
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
     return FutureBuilder(
       future: model.getOrderHistory(_market),
       builder:
@@ -134,7 +163,7 @@ var typeStyle = headerTextStyle;
   }
 
   Widget _getMarketList() {
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
     var accentColor = Theme.of(context).accentColor;
     return Container(
         height: 30,

@@ -1,6 +1,8 @@
+import 'package:btcmarkets/helpers/uihelpers.dart';
 import 'package:btcmarkets/models/appmessage.dart';
 import 'package:btcmarkets/models/settings.dart';
 import 'package:btcmarkets/providers/appdataprovider.dart';
+import 'package:btcmarkets/viewmodels/appdatamodel.dart';
 import 'package:btcmarkets/views/setpassword.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_reader/qr_reader.dart';
@@ -11,6 +13,9 @@ class SettingsView extends StatefulWidget {
   final TextEditingController secretController = new TextEditingController();
   final TextEditingController password1Controller = new TextEditingController();
   final TextEditingController password2Controller = new TextEditingController();
+
+  final FocusNode keyFocus = FocusNode();
+  final FocusNode secretFocus = FocusNode();
 
   final ApiCredentials apiCredentials = ApiCredentials();
   final PasswordData passwordData = PasswordData();
@@ -51,23 +56,26 @@ class _SettingsViewState extends State<SettingsView> {
 
   void clearApiKey() {
     widget.keyController.clear();
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
     model.apiCredentials.apiKey = widget.keyController.text;
   }
 
   void clearSecret() {
     widget.secretController.clear();
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
     model.apiCredentials.secret = widget.secretController.text;
   }
 
   void readApiKey() async {
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
 
     try {
       var qrReader = QRCodeReader();
       var apiKey = await qrReader.scan();
 
+      if(apiKey == null || apiKey.isEmpty || apiKey.length<=15)
+      return;
+      
       widget.keyController.text = apiKey;
       model.apiCredentials.apiKey = apiKey;
     } catch (e) {
@@ -76,12 +84,15 @@ class _SettingsViewState extends State<SettingsView> {
   }
 
   void readSecret() async {
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
 
     try {
       var qrReader = QRCodeReader();
 
       var secret = await qrReader.scan();
+      if(secret == null || secret.isEmpty || secret.length<=15)
+      return;
+
       model.apiCredentials.secret = secret;
 
       widget.secretController.text = secret;
@@ -91,7 +102,7 @@ class _SettingsViewState extends State<SettingsView> {
   }
 
   void setApiKey() {
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
 
     var key = widget.keyController.text;
     //print("key editing completed $key");
@@ -99,7 +110,7 @@ class _SettingsViewState extends State<SettingsView> {
   }
 
   void setSecret() {
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
 
     var secret = widget.secretController.text;
     //print("secret editing completed $secret");
@@ -135,10 +146,12 @@ class _SettingsViewState extends State<SettingsView> {
   void save() async {
    // print("In save");
 
+    widget.keyFocus.unfocus();
+    widget.secretFocus.unfocus();
     widget.passwordData.password = null;
     widget.passwordData.confirmPassword = null;
 
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
     var apiKey = model.apiCredentials.apiKey;
     var secret = model.apiCredentials.secret;
 
@@ -172,8 +185,7 @@ class _SettingsViewState extends State<SettingsView> {
           //print(model.currentCredentials.apiKey);
           //print(model.currentCredentials.secret);
           if (model.hasCredentialsChanged) {
-            await AppDataProvider.of(context)
-                .showPopup<String>(_getSetPassword(), title: "Set Password");
+            await  ViewHelper().showPopup<String>(_getSetPassword(), title: "Set Password",isModal: true);
             var password = widget.passwordData.password;
             //print("in Save got password $password");
             if (password == null || password.isEmpty) {
@@ -204,7 +216,7 @@ class _SettingsViewState extends State<SettingsView> {
     }
 
     await model.saveSettings();
-    AppDataProvider.of(context).showMessage(AppMessage(
+     ViewHelper().showMessage(AppMessage(
         message: "Saved settings successfully.",
         messageType: MessageType.success,
         isModal: true));
@@ -219,7 +231,7 @@ class _SettingsViewState extends State<SettingsView> {
     var clearColor = Colors.red;
 
     // print("building settings agains");
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
 
     widget.keyController.text = model.apiCredentials.apiKey;
     widget.secretController.text = model.apiCredentials.secret;
@@ -281,6 +293,7 @@ class _SettingsViewState extends State<SettingsView> {
                                               child: TextField(
                                             autocorrect: false,
                                             controller: widget.keyController,
+                                            focusNode: widget.keyFocus,
                                             maxLength: 100,
                                             onChanged: (value) {
                                               print("Changed apikey $value");
@@ -331,6 +344,7 @@ class _SettingsViewState extends State<SettingsView> {
                                               child: TextField(
                                             autocorrect: false,
                                             controller: widget.secretController,
+                                            focusNode: widget.secretFocus,
                                             onChanged: (value) {
                                               print("Changed secret $value");
                                               model.apiCredentials.secret =
@@ -430,7 +444,7 @@ class _SettingsViewState extends State<SettingsView> {
   }
 
   Widget _getThemes() {
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
     return DropdownButton<String>(
       items: [
         DropdownMenuItem(
@@ -454,6 +468,9 @@ class _SettingsViewState extends State<SettingsView> {
   }
 
   Widget _getSetPassword() {
+    var primaryColor = Theme.of(context).primaryColor;
+    var accentColor = Theme.of(context).accentColor;
+
     var hintColor = Theme.of(context).hintColor;
     var hintStyle = Theme.of(context).textTheme.subhead.copyWith(
           color: hintColor,
@@ -471,13 +488,13 @@ class _SettingsViewState extends State<SettingsView> {
                   key: _formKey,
                   child: Column(
                     children: <Widget>[
-                      Align(
-                          alignment: Alignment.topLeft,
-                          child: Text(
-                            "Set Password",
-                            style: hintStyle,
-                          )),
-                      SizedBox(height: 5),
+                      // Align(
+                      //     alignment: Alignment.topLeft,
+                      //     child: Text(
+                      //       "Set Password",
+                      //       style: hintStyle,
+                      //     )),
+                      // SizedBox(height: 5),
                       TextFormField(
                         controller: widget.password1Controller,
                         maxLength: 15,
@@ -508,13 +525,14 @@ class _SettingsViewState extends State<SettingsView> {
                         },
                       ),
                     
-                      Align(
-                          alignment: Alignment.topLeft,
-                          child: Text(
-                            "Confirm Password",
-                            style: hintStyle,
-                          )),
-                    
+                      // Align(
+                      //     alignment: Alignment.topLeft,
+                      //     child: Text(
+                      //       "Confirm Password",
+                      //       style: hintStyle,
+                      //     )),
+                      SizedBox(height: 5,),
+                      Wrap(children: <Widget>[
                       TextFormField(
                         controller: widget.password2Controller,
                         maxLength: 15,
@@ -523,7 +541,7 @@ class _SettingsViewState extends State<SettingsView> {
                         decoration: InputDecoration(
                              contentPadding:
                                                   EdgeInsets.all(12),
-                            hintText: "Reenter password",
+                            hintText: "Confirm password",
                             suffixIcon: IconButton(
                                 icon: Icon(Icons.cancel, color: Colors.red),
                                 onPressed: () {
@@ -546,24 +564,30 @@ class _SettingsViewState extends State<SettingsView> {
                           return null;
                         },
                       )
+                      ],)
                     ],
                   )),
              
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: <Widget>[
+                  
                   RaisedButton(
+                    color:accentColor,
                     child: Text("Cancel"),
                     onPressed: () {
                       // checkPassword();
                       cancelTask();
                     },
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                   ),
                   RaisedButton(
                     child: Text("Save"),
+                    color: accentColor,
                     onPressed: () {
                       checkPassword();
                     },
+                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                   )
                 ],
               )

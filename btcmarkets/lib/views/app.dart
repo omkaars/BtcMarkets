@@ -32,14 +32,13 @@ class CustomPopupMenu {
 }
 
 class BtcMarketsApp extends StatefulWidget {
-  BtcMarketsApp()
-  {
-   // initAppCenter();
+  BtcMarketsApp() {
+    // initAppCenter();
   }
 
 // void initAppCenter() async {
 //   print("Initialising app center");
-  
+
 //   var appSecret = Platform.isIOS ? "5d6b2da9-493f-403b-8831-1ba0a7bbf457" : "6c97d9a4-5334-4670-856d-e3e7c186b8f1";
 //   await AppCenter.start(
 //       appSecret, [AppCenterAnalytics.id, AppCenterCrashes.id]);
@@ -69,62 +68,54 @@ class _BtcMarketsAppState extends State<BtcMarketsApp> {
   AppDataModel _model;
 
   @override
-  void initState()
-  {
+  void initState() {
     super.initState();
-   
+    _model = AppDataModel();
     _checkSettings();
   }
-  void _checkSettings() async
-  {
-   
-   
-  }
+
+  void _checkSettings() async {}
   @override
   Widget build(BuildContext context) {
-   //  print("Checking settings");
-      if (_model == null) {
-      _model = AppDataModel();
-    
-    }
+    return
+        // AppDataProvider(
+        //     appDataContext: AppDataContext(),
+        //     model: _model,
+        //     child:
+        StreamBuilder(
+      stream: _model.settingsStream,
+      builder: (BuildContext buildContext, AsyncSnapshot<String> snapshot) {
+        if (!snapshot.hasData) {
+          return Center(child: CircularProgressIndicator());
+        }
+        switch (_model.settings.theme) {
+          case "Light":
+            _theme = lightTheme;
+            break;
+          default:
+            _theme = darkTheme;
+            break;
+        }
 
-    return AppDataProvider(
-        appDataContext: AppDataContext(),
-        model: _model,
-        child: StreamBuilder(
-          stream: _model.settingsStream,
-          builder: (BuildContext buildContext, AsyncSnapshot<String> snapshot) {
+       
+        var homeScreen = IndexedStack(
+          index: _model.isAppLocked?0:1,
+          children: <Widget>[
+          PasswordView(),
+          BottomMenuController(),
 
-            if(!snapshot.hasData)
-            {
-              return Center(child: CircularProgressIndicator());
-            }
-            switch (_model.settings.theme) {
-              case "Light":
-                _theme = lightTheme;
-                break;
-              default:
-                _theme = darkTheme;
-                break;
-            }
-            Widget homeScreen;
-         
-           // print("Password required ...... ${_model.passwordRequired}");
-            if(_model.passwordRequired)
-            {
-              homeScreen = PasswordView();
-            }
-            else
-            {
-             homeScreen = BottomMenuController();
-            }
-            return MaterialApp(
-                title: 'BTC Markets',
-                theme: _theme,
-                home: homeScreen,
-                routes: <String, WidgetBuilder>{});
-          },
-        ));
+        ],
+
+        );
+
+        return MaterialApp(
+            title: 'BTC Markets',
+            theme: _theme,
+            home: homeScreen,
+            routes: <String, WidgetBuilder>{});
+      },
+    );
+    //);
   }
 }
 
@@ -148,29 +139,28 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
   StreamSubscription<NavView> _navViewStream;
   Widget _bottomNavigationBar(int selectedIndex) => BottomNavigationBar(
         onTap: (int index) => setState(() {
-              var model = AppDataProvider.of(context).model;
+              var model = AppDataModel();
 
               if (index == 3) {
-           //     print("checking valid account");
+                //     print("checking valid account");
                 if (!model.isValidAccount) {
-                  
-              
                   _selectedIndex = 0;
                   // Scaffold.of(_scaffold).showSnackBar(SnackBar(backgroundColor: Colors.red,
                   //   content: Text(
                   //       "Account feature not available. You must setup valid apikey and secret in settings."),
                   //   duration: Duration(seconds: 3),
                   // ));
-                //  print("is not valid account");
-                   var provider = AppDataProvider.of(_scaffold);
-                    if(provider != null)
-                    {
-                      provider.showMessage(AppMessage(message: "Account feature not available. You must setup valid apikey and secret in settings.", messageType: MessageType.error));
-                    }
+                  //  print("is not valid account");
+
+                  ViewHelper().showMessage(AppMessage(
+                      message:
+                          "Account feature not available. You must setup valid apikey and secret in settings.",
+                      messageType: MessageType.error));
+
                   return;
                 }
               }
-              
+
               _selectedIndex = index;
             }),
         currentIndex: selectedIndex,
@@ -202,8 +192,14 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
 
   StreamSubscription _pageLoadingSub, _messageSub;
 
+  @override
+  void initState() {
+    super.initState();
+    _initListeners();
+  }
+
   void _initListeners() {
-    var model = AppDataProvider.of(context).model;
+    var model = AppDataModel();
 
     if (_pageLoadingSub != null) {
       _pageLoadingSub.cancel();
@@ -218,12 +214,7 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
       _messageSub.cancel();
     }
     _messageSub = model.messageNotifierStream.listen((appMessage) {
-
-      var provider = AppDataProvider.of(context);
-      if(provider != null)
-      {
-         provider.showMessage(appMessage);
-      }
+      ViewHelper().showMessage(appMessage);
       // if (_scaffold != null) {
       //   var color = Colors.green;
       //   if(appMessage.messageType == MessageType.error)
@@ -242,7 +233,7 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
     }
     _navViewStream = model.navStream.listen((nav) {
       setState(() {
-        var model = AppDataProvider.of(context).model;
+        var model = AppDataModel();
 
         switch (model.view.view) {
           case View.Home:
@@ -255,9 +246,9 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
             _selectedIndex = 2;
             break;
           case View.Account:
-           // print('valid Account **************');
+            // print('valid Account **************');
             if (model.isValidAccount) {
-             // print('valid Account **************');
+              // print('valid Account **************');
               _selectedIndex = 3;
             } else {
               _selectedIndex = 0;
@@ -295,13 +286,16 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
   BuildContext _scaffold;
   @override
   Widget build(BuildContext context) {
-    _initListeners();
+//    _initListeners();
 
     var scaffold = Scaffold(
         bottomNavigationBar: _bottomNavigationBar(_selectedIndex),
         body: Builder(
           builder: (scaffoldContext) {
             _scaffold = scaffoldContext;
+
+            ViewHelper().setContext(scaffoldContext);
+
             return pages[_selectedIndex];
           },
         )
@@ -322,7 +316,7 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
   @override
   void dispose() {
     super.dispose();
-    var model = AppDataProvider.of(context).model;
+
     if (_navViewStream != null) {
       _navViewStream.cancel();
     }
