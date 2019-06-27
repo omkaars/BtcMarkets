@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:btcmarkets/models/marketdata.dart';
 import 'package:btcmarkets/providers/appdataprovider.dart';
 import 'package:btcmarkets/viewmodels/appdatamodel.dart';
@@ -18,9 +20,36 @@ class _MarketListState extends State<MarketList>
     with AutomaticKeepAliveClientMixin<MarketList> {
   _MarketListState();
 
+  AppDataModel _model = AppDataModel();
+  
+  StreamSubscription _refreshMarkets;
+
   @override
-  void initState() {
+  void initState()
+  {
     super.initState();
+
+      if(_model.markets.length<=0)
+      {
+        _model.refreshMarkets();
+      }
+    _refreshMarkets = _model.marketsRefreshStream.listen((data){
+
+        setState(() {
+          
+        });
+    });
+  }
+
+  @override
+  void dispose()
+  {
+    super.dispose();
+
+    if(_refreshMarkets != null)
+    {
+      _refreshMarkets.cancel();
+    }
   }
 
   Future<Null> _onRefresh() async {
@@ -44,6 +73,7 @@ class _MarketListState extends State<MarketList>
     Navigator.push(
         context, MaterialPageRoute(builder: (context) => marketDetail));
   }
+
 
   Widget _buildUI() {
     var model = AppDataModel();
@@ -236,25 +266,26 @@ class _MarketListState extends State<MarketList>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    var model = AppDataModel();
-    return new StreamBuilder(
-      stream: model.marketsRefreshStream,
-      initialData: [],
-      builder: (BuildContext context, AsyncSnapshot snapshot) {
-        try {
-          //print("snapshot ${snapshot.data}");
-          if (snapshot.hasError) {
-            return Text(snapshot.error);
-          }
-          if (snapshot.hasData) {
-            return _buildUI();
-          }
-        } catch (e) {
-          print('exception thrown***************');
-          print(e);
-        }
-      },
-    );
+     return _buildUI();
+
+    // return new StreamBuilder(
+    //   stream: model.marketsRefreshStream,
+    //   initialData: [],
+    //   builder: (BuildContext context, AsyncSnapshot snapshot) {
+    //     try {
+    //       //print("snapshot ${snapshot.data}");
+    //       if (snapshot.hasError) {
+    //         return Text(snapshot.error);
+    //       }
+    //       if (snapshot.hasData) {
+    //         return _buildUI();
+    //       }
+    //     } catch (e) {
+    //       print('exception thrown***************');
+    //       print(e);
+    //     }
+    //   },
+    // );
   }
 
   @override

@@ -25,6 +25,7 @@ class _PasswordViewState extends State<PasswordView> {
     //       return new SetPasswordView();
     //     },
     //     fullscreenDialog: true));
+    widget.focusNode.unfocus();
 
     if (_formKey.currentState.validate()) {
       var password = widget.passwordController.text;
@@ -45,6 +46,7 @@ class _PasswordViewState extends State<PasswordView> {
 
   void resetLock()
   {
+    widget.focusNode.unfocus();
     clearPassword();
     var model = AppDataModel();
     model.resetCredentails();

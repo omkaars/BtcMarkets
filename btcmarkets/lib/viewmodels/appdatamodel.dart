@@ -142,6 +142,7 @@ class AppDataModel {
 
   void refreshApp() async {
     //refreshMarkets();
+
     await refreshMarkets();
     settingsSink.add("");
     accountSink.add("");
@@ -311,14 +312,13 @@ class AppDataModel {
     return success;
   }
 
- 
   Future refreshMarkets({isPullToRefesh = false}) async {
     debugPrint('Refreshing');
 
-    if (!isPullToRefesh) {
+   // if (!isPullToRefesh) {
       isLoading = true;
       pageLoadingSink.add(true);
-    }
+  //  }
 
     try {
       if (activeMarkets.isEmpty) {
@@ -425,10 +425,10 @@ class AppDataModel {
 
     // markets.sort((a,b)=> a.groupId.compareTo(b.groupId));
 
-    if (!isPullToRefesh) {
+  //  if (!isPullToRefesh) {
       isLoading = false;
       pageLoadingSink.add(false);
-    }
+   // }
   }
 
   Future<String> getTotalBalanceString(bool inBtc) async {

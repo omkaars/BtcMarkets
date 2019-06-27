@@ -54,6 +54,8 @@ class _BtcMarketsAppState extends State<BtcMarketsApp> {
   static Color primaryColor = HexColor("#3C6B3C");
   static Color accentColor = HexColor("#ff9933");
 
+  StreamSubscription _pageLoadingSub;
+
   final darkTheme = ThemeData.dark().copyWith(
       primaryColor: primaryColor,
       accentColor: accentColor,
@@ -71,7 +73,20 @@ class _BtcMarketsAppState extends State<BtcMarketsApp> {
   void initState() {
     super.initState();
     _model = AppDataModel();
+    _pageLoadingSub = _model.pageLoadingStream.listen((loading){
+      setState((){});
+    });
     _checkSettings();
+  }
+
+
+  @override
+  void dispose()
+  {
+    super.dispose();
+     if (_pageLoadingSub != null) {
+      _pageLoadingSub.cancel();
+    }
   }
 
   void _checkSettings() async {}
@@ -98,7 +113,9 @@ class _BtcMarketsAppState extends State<BtcMarketsApp> {
         }
 
        
-        var homeScreen = IndexedStack(
+        var homeScreen = 
+        
+        IndexedStack(
           index: _model.isAppLocked?0:1,
           children: <Widget>[
           PasswordView(),
@@ -108,10 +125,20 @@ class _BtcMarketsAppState extends State<BtcMarketsApp> {
 
         );
 
+      var stack = Stack(children: [
+      homeScreen,
+      Opacity(
+        opacity: _model.isLoading ? 1.0 : 0.0,
+        child: Center(
+          child: CircularProgressIndicator(),
+        ),
+      ),
+    ]);
+
         return MaterialApp(
             title: 'BTC Markets',
             theme: _theme,
-            home: homeScreen,
+            home: stack,
             routes: <String, WidgetBuilder>{});
       },
     );
@@ -201,15 +228,7 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
   void _initListeners() {
     var model = AppDataModel();
 
-    if (_pageLoadingSub != null) {
-      _pageLoadingSub.cancel();
-    }
-    _pageLoadingSub = model.pageLoadingStream.listen((loading) {
-      setState(() {
-        _loading = loading;
-      });
-    });
-
+    
     if (_messageSub != null) {
       _messageSub.cancel();
     }
@@ -302,15 +321,7 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
         // )
         );
 
-    return Stack(children: [
-      scaffold,
-      Opacity(
-        opacity: _loading ? 1.0 : 0.0,
-        child: Center(
-          child: CircularProgressIndicator(),
-        ),
-      ),
-    ]);
+      return scaffold;
   }
 
   @override
@@ -320,9 +331,7 @@ class _BottomMenuControllerState extends State<BottomMenuController> {
     if (_navViewStream != null) {
       _navViewStream.cancel();
     }
-    if (_pageLoadingSub != null) {
-      _pageLoadingSub.cancel();
-    }
+   
     if (_messageSub != null) {
       _messageSub.cancel();
     }

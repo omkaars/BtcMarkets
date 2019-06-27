@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:btcmarkets/models/navview.dart';
 import 'package:btcmarkets/providers/appdataprovider.dart';
 import 'package:btcmarkets/viewmodels/appdatamodel.dart';
@@ -17,17 +19,13 @@ class MarketsView extends StatefulWidget {
 class _MarketsViewState extends State<MarketsView> {
   NavDrawer _navDrawer = new NavDrawer();
  AppPopupMenu _popupMenu = new AppPopupMenu();
-  int _selectedIndex = 0;
+ AppDataModel _model = AppDataModel();
 
+  int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
     var model = AppDataModel();
- 
-    if (model.markets.length <= 0) {
-      model.refreshMarkets();
-    }
-
     switch (model.view.subView) {
       case SubView.MarketFavourites:
         _selectedIndex = 0;

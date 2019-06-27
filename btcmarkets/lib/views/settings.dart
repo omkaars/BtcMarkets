@@ -346,7 +346,7 @@ class _SettingsViewState extends State<SettingsView> {
                                             controller: widget.secretController,
                                             focusNode: widget.secretFocus,
                                             onChanged: (value) {
-                                              print("Changed secret $value");
+                                           //   print("Changed secret $value");
                                               model.apiCredentials.secret =
                                                   value;
                                             },
